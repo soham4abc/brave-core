@@ -141,4 +141,5 @@
     <color name="wallet_text_color">#212529</color>
     <color name="tab_color">#FF4081</color>
     
+    <color name="vpn_callout_bg_color">#381E85</color>
 </resources>
