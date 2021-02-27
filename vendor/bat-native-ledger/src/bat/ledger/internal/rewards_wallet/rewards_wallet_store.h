@@ -11,7 +11,8 @@
 #include "bat/ledger/internal/core/bat_ledger_context.h"
 #include "bat/ledger/internal/core/callback_scope.h"
 #include "bat/ledger/internal/core/future.h"
-#include "bat/ledger/public/interfaces/ledger.mojom.h"
+#include "bat/ledger/internal/core/optional.h"
+#include "bat/ledger/internal/rewards_wallet/rewards_wallet.h"
 
 namespace ledger {
 
@@ -19,15 +20,14 @@ class RewardsWalletStore : public BATLedgerContext::Object {
  public:
   static const size_t kComponentKey;
 
-  mojom::RewardsWallet& rewards_wallet() { return rewards_wallet_; }
+  optional<RewardsWallet>& rewards_wallet() { return rewards_wallet_; }
 
   Future<bool> Initialize();
 
-  Future<bool> SaveNew(const std::string& payment_id,
-                       const std::string& recovery_seed);
+  Future<bool> SaveNew(const RewardsWallet& wallet);
 
  private:
-  mojom::RewardsWallet rewards_wallet_;
+  optional<RewardsWallet> rewards_wallet_;
   CallbackScope callback_;
 };
 

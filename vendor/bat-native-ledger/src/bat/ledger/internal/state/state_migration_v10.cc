@@ -12,7 +12,7 @@
 #include "base/json/json_reader.h"
 #include "bat/ledger/internal/core/user_encryption.h"
 #include "bat/ledger/internal/ledger_impl.h"
-#include "bat/ledger/internal/rewards_wallet_store.h"
+#include "bat/ledger/internal/rewards_wallet/rewards_wallet_store.h"
 #include "bat/ledger/internal/state/state_keys.h"
 
 namespace ledger {

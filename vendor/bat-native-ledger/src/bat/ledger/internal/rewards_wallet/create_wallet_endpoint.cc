@@ -5,22 +5,29 @@
 
 #include "bat/ledger/internal/rewards_wallet/create_wallet_endpoint.h"
 
+#include "base/json/json_reader.h"
+#include "base/strings/string_number_conversions.h"
+#include "bat/ledger/internal/common/request_util.h"
+#include "bat/ledger/internal/common/security_util.h"
+#include "net/http/http_status_code.h"
+
 namespace ledger {
 
 namespace {
 
 const char kPath[] = "/v3/wallet/brave";
 
-class RequestJob : public BATLedgerJob<mojom::RewardsWalletPtr> {
+class RequestJob : public BATLedgerJob<optional<RewardsWallet>> {
  public:
   void Start() {
-    recovery_seed_ = util::Security::GenerateSeed();
+    auto keypair = wallet_.GenerateKeyPair();
+    auto headers = wallet_.GetRequestSigningHeaders(
+        "post", kPath, "", base::HexEncode(keypair.public_key));
 
     auto request = mojom::UrlRequest::New();
+    request->method = mojom::UrlMethod::POST;
     request->url = GetUrl();  // TODO(zenparsing)
-    request->headers = util::BuildSignHeaders("post " + kPath, "",
-        util::Security::GetPublicKeyHexFromSeed(recovery_seed), recovery_seed);
-    request->method = type::UrlMethod::POST;
+    request->headers = std::move(headers);
 
     context()
         .Get<URLFetcher>()
@@ -31,19 +38,13 @@ class RequestJob : public BATLedgerJob<mojom::RewardsWalletPtr> {
  private:
   void OnResponse(mojom::UrlResponsePtr response) {
     if (!IsValidStatus(response.status_code))
-      return Complete(nullptr);
+      return Complete({});
 
     std::string payment_id = ParseResponse();
     if (payment_id.empty())
-      return Complete(nullptr);
+      return Complete({});
 
-    DCHECK(!recovery_seed_.empty());
-
-    auto wallet = mojom::RewardsWallet::New();
-    wallet->payment_id = std::move(payment_id);
-    wallet->recovery_seed = std::move(recovery_seed_);
-
-    Complete(std::move(wallet));
+    Complete(RewardsWallet(payment_id, recovery_seed_));
   }
 
   bool IsValidStatus(int status_code) {
@@ -75,7 +76,7 @@ class RequestJob : public BATLedgerJob<mojom::RewardsWalletPtr> {
     return *payment_id;
   }
 
-  std::vector<uint8_t> recovery_seed_;
+  RewardsWallet wallet_ = RewardsWallet::CreateWithEmptyPaymentId();
 };
 
 }  // namespace
@@ -83,7 +84,7 @@ class RequestJob : public BATLedgerJob<mojom::RewardsWalletPtr> {
 const size_t CreateWalletEndpoint::kComponentKey =
     BATLedgerContext::ReserveComponentKey();
 
-Future<mojom::RewardsWalletPtr> CreateWalletEndpoint::RequestNewWallet() {
+Future<optional<RewardsWallet>> CreateWalletEndpoint::CreateRewardsWallet() {
   return context().StartJob<RequestJob>();
 }
 

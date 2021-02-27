@@ -63,6 +63,12 @@ class Future {
     return resolver.future();
   }
 
+  static Future Completed(T value) {
+    Resolver resolver;
+    resolver.Complete(std::move(value));
+    return resolver.future();
+  }
+
   class Resolver {
    public:
     Resolver() {}

@@ -9,7 +9,8 @@
 #include "bat/ledger/internal/core/bat_ledger_context.h"
 #include "bat/ledger/internal/core/callback_scope.h"
 #include "bat/ledger/internal/core/future.h"
-#include "bat/ledger/public/interfaces/ledger.mojom.h"
+#include "bat/ledger/internal/core/optional.h"
+#include "bat/ledger/internal/rewards_wallet/rewards_wallet.h"
 
 // POST /v3/wallet/brave
 //
@@ -34,7 +35,7 @@ class CreateWalletEndpoint : public BATLedgerContext::Object {
  public:
   static const size_t kComponentKey;
 
-  Future<mojom::RewardsWalletPtr> RequestNewWallet();
+  Future<optional<RewardsWallet>> CreateRewardsWallet();
 };
 
 }  // namespace ledger

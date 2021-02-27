@@ -18,7 +18,7 @@
 #include "bat/ledger/internal/bitflyer/bitflyer_util.h"
 #include "bat/ledger/internal/ledger_impl.h"
 #include "bat/ledger/internal/logging/event_log_keys.h"
-#include "bat/ledger/internal/rewards_wallet_store.h"
+#include "bat/ledger/internal/rewards_wallet/rewards_wallet_store.h"
 #include "bat/ledger/internal/state/state_keys.h"
 #include "bat/ledger/internal/uphold/uphold.h"
 #include "bat/ledger/internal/uphold/uphold_util.h"
@@ -219,17 +219,12 @@ void Wallet::DisconnectAllWallets(ledger::ResultCallback callback) {
 
 type::BraveWalletPtr Wallet::GetWallet() {
   auto& wallet = ledger_->context().Get<RewardsWalletStore>().rewards_wallet();
-  if (wallet.payment_id.empty())
+  if (!wallet)
     return nullptr;
 
-  // TODO(zenparsing): Use RewardsWallet and just clone it.
   auto brave_wallet = ledger::type::BraveWallet::New();
-  brave_wallet->payment_id = wallet.payment_id;
-
-  std::vector<uint8_t> vector_seed;
-  vector_seed.assign(wallet.recovery_seed.begin(), wallet.recovery_seed.end());
-  brave_wallet->recovery_seed = vector_seed;
-
+  brave_wallet->payment_id = wallet->payment_id();
+  brave_wallet->recovery_seed = wallet->recovery_seed();;
   return brave_wallet;
 }
 
@@ -242,8 +237,7 @@ bool Wallet::SetWallet(type::BraveWalletPtr wallet) {
   ledger_->database()->SaveEventLog(state::kPaymentId, wallet->payment_id);
 
   ledger_->context().Get<RewardsWalletStore>().SaveNew(
-      wallet->payment_id,
-      std::string(wallet->recovery_seed.begin(), wallet->recovery_seed.end()));
+      RewardsWallet(wallet->payment_id, wallet->recovery_seed));
 
   return true;
 }

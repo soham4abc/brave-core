@@ -8,7 +8,7 @@
 #include <utility>
 
 #include "bat/ledger/internal/core/bat_ledger_job.h"
-#include "bat/ledger/internal/rewards_wallet_store.h"
+#include "bat/ledger/internal/rewards_wallet/rewards_wallet_store.h"
 
 namespace ledger {
 
