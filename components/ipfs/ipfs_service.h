@@ -118,6 +118,9 @@ class IpfsService : public KeyedService,
   void OnImportFinished(ipfs::ImportCompletedCallback callback,
                         size_t key,
                         const ipfs::ImportedData& data);
+  void ExportKey(const std::string& key,
+                 const base::FilePath& target_path,
+                 BoolCallback callback);
 #endif
   void GetConnectedPeers(GetConnectedPeersCallback callback,
                          int retries = kPeersDefaultRetries);
@@ -143,7 +146,6 @@ class IpfsService : public KeyedService,
     prewarm_callback_for_testing_ = std::move(callback);
   }
 #if BUILDFLAG(IPFS_LOCAL_NODE_ENABLED)
-  static bool WaitUntilExecutionFinished(base::Process process);
   IpnsKeysManager* GetIpnsKeysManager() { return ipns_keys_manager_.get(); }
 #endif
  protected:
@@ -166,6 +168,12 @@ class IpfsService : public KeyedService,
   void NotifyIpnsKeysLoaded(bool result);
   // Launches the ipfs service in an utility process.
   void LaunchIfNotRunning(const base::FilePath& executable_path);
+#if BUILDFLAG(IPFS_LOCAL_NODE_ENABLED)
+  static bool WaitUntilExecutionFinished(base::Process process);
+  void ExecuteNodeCommand(const base::CommandLine& command_line,
+                          const base::FilePath& data,
+                          base::OnceCallback<void(bool)> callback);
+#endif
   base::TimeDelta CalculatePeersRetryTime();
 
   void OnGetConnectedPeers(SimpleURLLoaderList::iterator iter,
