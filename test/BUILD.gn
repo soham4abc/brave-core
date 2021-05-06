@@ -15,6 +15,7 @@ import("//brave/components/crypto_dot_com/browser/buildflags/buildflags.gni")
 import("//brave/components/decentralized_dns/buildflags/buildflags.gni")
 import("//brave/components/gemini/browser/buildflags/buildflags.gni")
 import("//brave/components/gemini/browser/buildflags/buildflags.gni")
+import("//brave/components/debounce/browser/buildflags/buildflags.gni")
 import("//brave/components/greaselion/browser/buildflags/buildflags.gni")
 import("//brave/components/ipfs/buildflags/buildflags.gni")
 import("//brave/components/speedreader/buildflags.gni")
@@ -593,7 +594,6 @@ if (!is_android) {
       "//brave/browser/extensions/brave_theme_event_router_browsertest.cc",
       "//brave/browser/net/brave_network_delegate_browsertest.cc",
       "//brave/browser/net/brave_network_delegate_hsts_fingerprinting_browsertest.cc",
-      "//brave/browser/net/brave_site_hacks_network_delegate_helper_browsertest.cc",
       "//brave/browser/net/brave_system_request_handler_browsertest.cc",
       "//brave/browser/net/global_privacy_control_network_delegate_helper_browsertest.cc",
       "//brave/browser/policy/brave_policy_browsertest.cc",
@@ -685,6 +685,15 @@ if (!is_android) {
         "//brave/components/brave_perf_predictor/browser",
         "//brave/components/brave_perf_predictor/common",
         "//components/user_prefs",
+      ]
+    }
+
+    if (enable_debounce) {
+      sources += [ "//brave/browser/debounce/debounce_browsertest.cc" ]
+
+      deps += [
+        "//brave/components/debounce/browser",
+        "//chrome/browser",
       ]
     }
 
