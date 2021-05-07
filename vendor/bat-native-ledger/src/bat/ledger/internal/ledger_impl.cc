@@ -11,6 +11,7 @@
 #include "bat/ledger/internal/common/time_util.h"
 #include "bat/ledger/internal/constants.h"
 #include "bat/ledger/internal/core/bat_ledger_context.h"
+#include "bat/ledger/internal/core/bat_ledger_initializer.h"
 #include "bat/ledger/internal/ledger_impl.h"
 #include "bat/ledger/internal/legacy/media/helper.h"
 #include "bat/ledger/internal/legacy/static_values.h"
@@ -199,6 +200,18 @@ void LedgerImpl::OnStateInitialized(type::Result result,
 
   if (result != type::Result::LEDGER_OK) {
     BLOG(0, "Failed to initialize state");
+    return;
+  }
+
+  context().Get<BATLedgerInitializer>().Initialize().Then(base::BindOnce(
+      &LedgerImpl::OnInitializerComplete, base::Unretained(this), callback));
+}
+
+void LedgerImpl::OnInitializerComplete(ledger::ResultCallback callback,
+                                       bool success) {
+  if (!success) {
+    BLOG(0, "BATLedgerInitializer failed to complete successfully");
+    callback(type::Result::LEDGER_ERROR);
     return;
   }
 

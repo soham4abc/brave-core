@@ -325,6 +325,8 @@ class LedgerImpl : public Ledger {
 
   void OnDatabaseInitialized(type::Result result, ResultCallback callback);
 
+  void OnInitializerComplete(ledger::ResultCallback callback, bool success);
+
   void OnAllDone(type::Result result, ResultCallback callback);
 
   template <typename T>
