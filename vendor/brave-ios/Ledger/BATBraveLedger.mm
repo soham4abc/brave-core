@@ -36,10 +36,10 @@
 #import "base/command_line.h"
 #import "base/i18n/icu_util.h"
 #import "base/ios/ios_util.h"
+
 #include "base/sequenced_task_runner.h"
-#include "base/task/post_task.h"
 #include "base/task/thread_pool.h"
-#include "base/task_runner_util.h"
+#include "base/threading/sequence_bound.h"
 
 #import "RewardsLogging.h"
 
@@ -99,27 +99,10 @@ typedef NS_ENUM(NSInteger, BATLedgerDatabaseMigrationType) {
   BATLedgerDatabaseMigrationTypeNone
 };
 
-namespace {
-
-ledger::type::DBCommandResponsePtr RunDBTransactionOnTaskRunner(
-    ledger::type::DBTransactionPtr transaction,
-    ledger::LedgerDatabase* database) {
-  auto response = ledger::type::DBCommandResponse::New();
-  if (!database) {
-    response->status = ledger::type::DBCommandResponse::Status::RESPONSE_ERROR;
-  } else {
-    database->RunTransaction(std::move(transaction), response.get());
-  }
-
-  return response;
-}
-
-}  // namespace
-
 @interface BATBraveLedger () <NativeLedgerClientBridge> {
   NativeLedgerClient *ledgerClient;
   ledger::Ledger *ledger;
-  ledger::LedgerDatabase *rewardsDatabase;
+  base::SequenceBound<ledger::LedgerDatabase>* rewardsDatabase;
   scoped_refptr<base::SequencedTaskRunner> databaseQueue;
 }
 
@@ -193,7 +176,8 @@ ledger::type::DBCommandResponsePtr RunDBTransactionOnTaskRunner(
          base::TaskShutdownBehavior::BLOCK_SHUTDOWN});
 
     const auto* dbPath = [self rewardsDatabasePath].UTF8String;
-    rewardsDatabase = ledger::LedgerDatabase::CreateInstance(base::FilePath(dbPath));
+    rewardsDatabase = new base::SequenceBound<ledger::LedgerDatabase>(
+        databaseQueue, base::FilePath(dbPath));
 
     ledgerClient = new NativeLedgerClient(self);
     ledger = ledger::Ledger::CreateInstance(ledgerClient);
@@ -210,11 +194,9 @@ ledger::type::DBCommandResponsePtr RunDBTransactionOnTaskRunner(
   [NSNotificationCenter.defaultCenter removeObserver:self];
   [self.notificationStartupTimer invalidate];
 
-  if (rewardsDatabase) {
-    databaseQueue->DeleteSoon(FROM_HERE, rewardsDatabase);
-  }
   delete ledger;
   delete ledgerClient;
+  delete rewardsDatabase;
 }
 
 - (void)initializeLedgerService:(nullable void (^)())completion
@@ -353,11 +335,9 @@ ledger::type::DBCommandResponsePtr RunDBTransactionOnTaskRunner(
 
 - (void)resetRewardsDatabase
 {
-  delete rewardsDatabase;
-  const auto dbPath = [self rewardsDatabasePath];
-  [NSFileManager.defaultManager removeItemAtPath:dbPath error:nil];
-  [NSFileManager.defaultManager removeItemAtPath:[dbPath stringByAppendingString:@"-journal"] error:nil];
-  rewardsDatabase = ledger::LedgerDatabase::CreateInstance(base::FilePath(dbPath.UTF8String));
+  DCHECK(rewardsDatabase);
+  rewardsDatabase->AsyncCall(&ledger::LedgerDatabase::DeleteDatabaseFile)
+      .Then(base::BindOnce([](bool) {}));
 }
 
 - (void)getCreateScript:(ledger::client::GetCreateScriptCallback)callback
@@ -1866,12 +1846,12 @@ BATLedgerBridge(BOOL,
 - (void)runDBTransaction:(ledger::type::DBTransactionPtr)transaction
                 callback:(ledger::client::RunDBTransactionCallback)callback
 {
+  DCHECK(rewardsDatabase);
   __weak BATBraveLedger* weakSelf = self;
-  base::PostTaskAndReplyWithResult(
-      databaseQueue.get(), FROM_HERE,
-      base::BindOnce(&RunDBTransactionOnTaskRunner, std::move(transaction),
-                     rewardsDatabase),
-      base::BindOnce(^(ledger::type::DBCommandResponsePtr response) {
+
+  rewardsDatabase->AsyncCall(&ledger::LedgerDatabase::RunTransaction)
+      .WithArgs(std::move(transaction))
+      .Then(base::BindOnce(^(ledger::type::DBCommandResponsePtr response) {
         if (weakSelf)
           callback(std::move(response));
       }));
