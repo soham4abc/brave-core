@@ -365,6 +365,15 @@ class RewardsService : public KeyedService {
 
   virtual bool IsRewardsEnabled() const = 0;
 
+  virtual std::string GetScheduledCaptchaUrl() = 0;
+
+  virtual void UpdateScheduledCaptchaResult(bool result) = 0;
+
+  virtual void ShowScheduledCaptcha(const std::string& payment_id,
+                                    const std::string& captcha_id) = 0;
+
+  virtual void SnoozeScheduledCaptcha() = 0;
+
  protected:
   base::ObserverList<RewardsServiceObserver> observers_;
 

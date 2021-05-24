@@ -43,6 +43,9 @@ void RewardsService::RemoveObserver(RewardsServiceObserver* observer) {
 
 // static
 void RewardsService::RegisterProfilePrefs(PrefRegistrySimple* registry) {
+  registry->RegisterStringPref(prefs::kScheduledCaptchaId, "");
+  registry->RegisterIntegerPref(prefs::kScheduledCaptchaSnoozeCount, 0);
+  registry->RegisterIntegerPref(prefs::kScheduledCaptchaFailedAttempts, 0);
   registry->RegisterStringPref(prefs::kNotifications, "");
   registry->RegisterTimeDeltaPref(prefs::kNotificationTimerInterval,
                                   base::TimeDelta::FromDays(1));

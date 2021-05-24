@@ -13,6 +13,7 @@ declare namespace RewardsExtension {
     tipAmounts: Record<string, number[]>
     externalWallet?: ExternalWallet
     initializing: boolean
+    scheduledCaptchaUrl: string
     showOnboarding: boolean
     adsPerHour: number
     autoContributeAmount: number

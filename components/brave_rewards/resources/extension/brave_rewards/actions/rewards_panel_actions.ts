@@ -80,6 +80,10 @@ export const onEnabledAC = (enabled: boolean) => action(types.ON_ENABLED_AC, {
   enabled
 })
 
+export const onGetScheduledCaptchaUrl = (scheduledCaptchaUrl: string) => action(types.ON_GET_SCHEDULED_CAPTCHA_URL, {
+  scheduledCaptchaUrl
+})
+
 export const onShouldShowOnboarding = (showOnboarding: boolean) => action(types.ON_SHOULD_SHOW_ONBOARDING, {
   showOnboarding
 })

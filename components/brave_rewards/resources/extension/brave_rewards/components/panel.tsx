@@ -6,7 +6,7 @@ import * as React from 'react'
 import { bindActionCreators, Dispatch } from 'redux'
 import { connect } from 'react-redux'
 import { WalletAddIcon, BatColorIcon } from 'brave-ui/components/icons'
-import { WalletWrapper, WalletSummary, WalletSummarySlider, WalletPanel } from '../../../ui/components'
+import { AdaptiveCaptcha, WalletWrapper, WalletSummary, WalletSummarySlider, WalletPanel } from '../../../ui/components'
 import { Provider } from '../../../ui/components/profile'
 import { NotificationType } from '../../../ui/components/walletWrapper'
 import { RewardsNotificationType } from '../constants/rewards_panel_types'
@@ -98,6 +98,10 @@ export class Panel extends React.Component<Props, State> {
   startRewards () {
     chrome.braveRewards.getACEnabled((enabled: boolean) => {
       this.props.actions.onEnabledAC(enabled)
+    })
+
+    chrome.braveRewards.getScheduledCaptchaUrl((scheduledCaptchaUrl: string) => {
+      this.props.actions.onGetScheduledCaptchaUrl(scheduledCaptchaUrl)
     })
 
     chrome.braveRewards.shouldShowOnboarding((showOnboarding: boolean) => {
@@ -768,7 +772,16 @@ export class Panel extends React.Component<Props, State> {
     )
   }
 
-  render () {
+  getScheduledCaptcha = (scheduledCaptchaUrl: string) => {
+    return (
+      <AdaptiveCaptcha
+        scheduledCaptchaUrl={scheduledCaptchaUrl}
+        attempts={1}
+      />
+    )
+  }
+
+  getWalletWrapper = () => {
     const { pendingContributionTotal, enabledAC, externalWallet, balance, parameters } = this.props.rewardsPanelData
     const publisher: RewardsExtension.Publisher | undefined = this.getPublisher()
     const total = balance.total || 0
@@ -861,6 +874,15 @@ export class Panel extends React.Component<Props, State> {
         {this.showOnboarding()}
       </WalletWrapper>
     )
+  }
+
+  render () {
+    const { scheduledCaptchaUrl } = this.props.rewardsPanelData
+    if (scheduledCaptchaUrl) {
+      return this.getScheduledCaptcha(scheduledCaptchaUrl)
+    } else {
+      return this.getWalletWrapper()
+    }
   }
 }
 

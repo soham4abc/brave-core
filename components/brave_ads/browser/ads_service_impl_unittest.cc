@@ -240,6 +240,16 @@ class MockRewardsService : public RewardsService {
   MOCK_METHOD1(SetAdsEnabled, void(const bool is_enabled));
 
   MOCK_CONST_METHOD0(IsRewardsEnabled, bool());
+
+  MOCK_METHOD0(GetScheduledCaptchaUrl, std::string());
+
+  MOCK_METHOD1(UpdateScheduledCaptchaResult, void(bool result));
+
+  MOCK_METHOD2(ShowScheduledCaptcha,
+               void(const std::string& payment_id,
+                    const std::string& captcha_id));
+
+  MOCK_METHOD0(SnoozeScheduledCaptcha, void());
 };
 
 class AdsServiceTest : public testing::Test {

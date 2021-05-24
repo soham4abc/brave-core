@@ -40,7 +40,9 @@
 #include "bat/ledger/global_constants.h"
 #include "bat/ledger/ledger_database.h"
 #include "brave/browser/brave_ads/ads_service_factory.h"
+#include "brave/browser/ui/views/brave_actions/brave_actions_container.h"
 #include "brave/browser/ui/webui/brave_rewards_source.h"
+#include "brave/components/brave_adaptive_captcha/brave_adaptive_captcha.h"
 #include "brave/components/brave_ads/browser/ads_service.h"
 #include "brave/components/brave_ads/browser/buildflags/buildflags.h"
 #include "brave/components/brave_rewards/browser/android_util.h"
@@ -63,6 +65,7 @@
 #include "chrome/browser/favicon/favicon_service_factory.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/service_sandbox_type.h"
+#include "chrome/browser/ui/browser_finder.h"
 #include "components/country_codes/country_codes.h"
 #include "components/favicon/core/favicon_service.h"
 #include "components/favicon_base/favicon_types.h"
@@ -73,6 +76,7 @@
 #include "content/public/browser/service_process_host.h"
 #include "content/public/browser/storage_partition.h"
 #include "content/public/browser/url_data_source.h"
+#include "extensions/common/constants.h"
 #include "net/base/escape.h"
 #include "net/base/registry_controlled_domains/registry_controlled_domain.h"
 #include "net/base/url_util.h"
@@ -3396,6 +3400,66 @@ bool RewardsServiceImpl::IsRewardsEnabled() const {
     return true;
 
   return false;
+}
+
+std::string RewardsServiceImpl::GetScheduledCaptchaUrl() {
+  const std::string payment_id = "ae07288c-d078-11eb-b8bc-0242ac130008";
+  const std::string captcha_id =
+      profile_->GetPrefs()->GetString(prefs::kScheduledCaptchaId);
+  if (payment_id.empty() || captcha_id.empty()) {
+    return "";
+  }
+
+  return brave_adaptive_captcha::BraveAdaptiveCaptcha::GetScheduledCaptchaUrl(
+      payment_id, captcha_id);
+}
+
+void RewardsServiceImpl::UpdateScheduledCaptchaResult(bool result) {
+  PrefService* pref_service = profile_->GetPrefs();
+
+  if (!result) {
+    const int failed_attempts =
+        pref_service->GetInteger(prefs::kScheduledCaptchaFailedAttempts);
+    pref_service->SetInteger(prefs::kScheduledCaptchaFailedAttempts,
+                             failed_attempts + 1);
+    return;
+  }
+
+  pref_service->SetInteger(prefs::kScheduledCaptchaFailedAttempts, 0);
+  pref_service->SetInteger(prefs::kScheduledCaptchaSnoozeCount, 0);
+  pref_service->SetString(prefs::kScheduledCaptchaId, "");
+}
+
+void RewardsServiceImpl::ShowScheduledCaptcha(const std::string& payment_id,
+                                              const std::string& captcha_id) {
+  profile_->GetPrefs()->SetString(prefs::kScheduledCaptchaId, captcha_id);
+
+  Browser* browser = chrome::FindBrowserWithProfile(profile_);
+  if (!browser) {
+    return;
+  }
+
+  std::string error;
+  bool popup_shown = extensions::BraveActionAPI::ShowActionUI(
+      browser, brave_rewards_extension_id, nullptr, &error);
+  if (!popup_shown) {
+    LOG(ERROR) << "Could not open rewards popup: " << error;
+  }
+}
+
+void RewardsServiceImpl::SnoozeScheduledCaptcha() {
+  PrefService* pref_service = profile_->GetPrefs();
+
+  const int snooze_count =
+      pref_service->GetInteger(prefs::kScheduledCaptchaSnoozeCount);
+  if (snooze_count >= 1) {
+    LOG(ERROR) << "Scheduled captcha can not be snoozed any longer";
+    return;
+  }
+
+  pref_service->SetString(prefs::kScheduledCaptchaId, "");
+  pref_service->SetInteger(prefs::kScheduledCaptchaSnoozeCount,
+                           snooze_count + 1);
 }
 
 void RewardsServiceImpl::OnStartProcessForSetAdsEnabled() {

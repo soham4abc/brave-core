@@ -342,6 +342,15 @@ class RewardsServiceImpl : public RewardsService,
 
   bool IsRewardsEnabled() const override;
 
+  std::string GetScheduledCaptchaUrl() override;
+
+  void UpdateScheduledCaptchaResult(bool result) override;
+
+  void ShowScheduledCaptcha(const std::string& payment_id,
+                            const std::string& captcha_id) override;
+
+  void SnoozeScheduledCaptcha() override;
+
   // Testing methods
   void SetLedgerEnvForTesting();
   void PrepareLedgerEnvForTesting();

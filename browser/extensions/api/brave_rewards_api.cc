@@ -1190,6 +1190,41 @@ BraveRewardsShouldShowOnboardingFunction::Run() {
   return RespondNow(OneArgument(base::Value(should_show)));
 }
 
+BraveRewardsGetScheduledCaptchaUrlFunction::
+    ~BraveRewardsGetScheduledCaptchaUrlFunction() = default;
+
+ExtensionFunction::ResponseAction
+BraveRewardsGetScheduledCaptchaUrlFunction::Run() {
+  Profile* profile = Profile::FromBrowserContext(browser_context());
+  auto* rewards_service = RewardsServiceFactory::GetForProfile(profile);
+  if (!rewards_service) {
+    return RespondNow(Error("Rewards service is not initialized"));
+  }
+
+  const std::string scheduled_captcha_url =
+      rewards_service->GetScheduledCaptchaUrl();
+  return RespondNow(OneArgument(base::Value(scheduled_captcha_url)));
+}
+
+BraveRewardsUpdateScheduledCaptchaResultFunction::
+    ~BraveRewardsUpdateScheduledCaptchaResultFunction() = default;
+
+ExtensionFunction::ResponseAction
+BraveRewardsUpdateScheduledCaptchaResultFunction::Run() {
+  std::unique_ptr<brave_rewards::UpdateScheduledCaptchaResult::Params> params(
+      brave_rewards::UpdateScheduledCaptchaResult::Params::Create(*args_));
+  EXTENSION_FUNCTION_VALIDATE(params.get());
+
+  Profile* profile = Profile::FromBrowserContext(browser_context());
+  auto* rewards_service = RewardsServiceFactory::GetForProfile(profile);
+  if (!rewards_service) {
+    return RespondNow(Error("Rewards service is not initialized"));
+  }
+
+  rewards_service->UpdateScheduledCaptchaResult(params->result);
+  return RespondNow(NoArguments());
+}
+
 BraveRewardsEnableRewardsFunction::~BraveRewardsEnableRewardsFunction() =
     default;
 

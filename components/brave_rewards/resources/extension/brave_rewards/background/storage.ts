@@ -28,6 +28,7 @@ export const defaultState: RewardsExtension.State = {
     wallets: {}
   },
   initializing: true,
+  scheduledCaptchaUrl: '',
   showOnboarding: false,
   adsPerHour: 1,
   autoContributeAmount: 0

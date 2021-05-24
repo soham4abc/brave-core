@@ -1153,7 +1153,7 @@
       {
         "name": "getAnonWalletStatus",
         "type": "function",
-        "description": "Gets wallet status fo anon wallet",
+        "description": "Gets wallet status for anon wallet",
         "parameters": [
           {
             "type": "function",
@@ -1198,6 +1198,34 @@
                 "type": "boolean"
               }
             ]
+          }
+        ]
+      },
+      {
+        "name": "getScheduledCaptchaUrl",
+        "type": "function",
+        "description": "Gets a url to retrieve a scheduled captcha (if any) for the user.",
+        "parameters": [
+          {
+            "type": "function",
+            "name": "callback",
+            "parameters": [
+              {
+                "name": "scheduledCaptchaUrl",
+                "type": "string"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "updateScheduledCaptchaResult",
+        "type": "function",
+        "description": "",
+        "parameters": [
+          {
+            "name": "result",
+            "type": "boolean"
           }
         ]
       },
