@@ -12,6 +12,7 @@
 #include "base/json/json_writer.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/values.h"
+#include "bat/ads/public/interfaces/ads.mojom-shared.h"
 #include "brave/browser/brave_ads/ads_service_factory.h"
 #include "brave/browser/ntp_background_images/view_counter_service_factory.h"
 #include "brave/browser/profiles/profile_util.h"
@@ -292,6 +293,20 @@ void BraveNewTabMessageHandler::RegisterMessages() {
       "todayOnPromotedCardView",
       base::BindRepeating(
           &BraveNewTabMessageHandler::HandleTodayOnPromotedCardView,
+          base::Unretained(this)));
+  web_ui()->RegisterMessageCallback(
+      "todayGetDisplayAd",
+      base::BindRepeating(&BraveNewTabMessageHandler::HandleTodayGetDisplayAd,
+                          base::Unretained(this)));
+  web_ui()->RegisterMessageCallback(
+      "todayOnDisplayAdVisit",
+      base::BindRepeating(
+          &BraveNewTabMessageHandler::HandleTodayOnDisplayAdVisit,
+          base::Unretained(this)));
+  web_ui()->RegisterMessageCallback(
+      "todayOnDisplayAdView",
+      base::BindRepeating(
+          &BraveNewTabMessageHandler::HandleTodayOnDisplayAdView,
           base::Unretained(this)));
 }
 
@@ -687,6 +702,104 @@ void BraveNewTabMessageHandler::HandleTodayOnPromotedCardView(
         item_id, creative_instance_id,
         ads::mojom::BraveAdsPromotedContentAdEventType::kViewed);
   }
+}
+
+void BraveNewTabMessageHandler::HandleTodayGetDisplayAd(
+    const base::ListValue* args) {
+  AllowJavascript();
+  std::string callback_id;
+  args->GetString(0, &callback_id);
+  auto* ads_service_ = brave_ads::AdsServiceFactory::GetForProfile(profile_);
+  if (!ads_service_) {
+    ResolveJavascriptCallback(base::Value(callback_id),
+                              std::move(base::Value()));
+    return;
+  }
+  auto onAdReceived = base::BindOnce(
+      [](BraveNewTabMessageHandler* handler, std::string callback_id,
+         const bool success, const std::string& dimensions,
+         const base::DictionaryValue& ad) {
+        if (!success) {
+          handler->ResolveJavascriptCallback(base::Value(callback_id),
+                                             std::move(base::Value()));
+          return;
+        }
+        handler->ResolveJavascriptCallback(base::Value(callback_id),
+                                           std::move(ad));
+      },
+      base::Unretained(this), callback_id);
+  ads_service_->GetInlineContentAd("900x750", std::move(onAdReceived));
+}
+
+void BraveNewTabMessageHandler::HandleTodayOnDisplayAdVisit(
+    const base::ListValue* args) {
+  // Collect params
+  std::string item_id;
+  std::string creative_instance_id;
+  args->GetString(0, &item_id);
+  args->GetString(1, &creative_instance_id);
+  // Validate
+  if (item_id.empty()) {
+    LOG(ERROR) << "News: asked to record visit for an ad without ad id";
+    return;
+  }
+  if (creative_instance_id.empty()) {
+    LOG(ERROR) << "News: asked to record visit for an ad without "
+                  "ad creative instance id";
+    return;
+  }
+  // Let ad service know an ad was visited
+  auto* ads_service_ = brave_ads::AdsServiceFactory::GetForProfile(profile_);
+  if (!ads_service_) {
+    VLOG(1)
+        << "News: Asked to record an ad visit but there is no ads service for"
+           "this profile!";
+    return;
+  }
+  ads_service_->OnInlineContentAdEvent(
+      item_id, creative_instance_id,
+      ads::mojom::BraveAdsInlineContentAdEventType::kClicked);
+}
+
+void BraveNewTabMessageHandler::HandleTodayOnDisplayAdView(
+    const base::ListValue* args) {
+  // Collect params
+  std::string item_id;
+  std::string creative_instance_id;
+  args->GetString(0, &item_id);
+  args->GetString(1, &creative_instance_id);
+
+  // Validate
+  if (item_id.empty()) {
+    LOG(ERROR) << "News: asked to record view for an ad without ad id";
+    return;
+  }
+  if (creative_instance_id.empty()) {
+    LOG(ERROR) << "News: asked to record view for an ad without "
+                  "ad creative instance id";
+    return;
+  }
+  // Let ad service know an ad was viewed
+  auto* ads_service_ = brave_ads::AdsServiceFactory::GetForProfile(profile_);
+  if (!ads_service_) {
+    VLOG(1)
+        << "News: Asked to record an ad visit but there is no ads service for"
+           "this profile!";
+    return;
+  }
+  ads_service_->OnInlineContentAdEvent(
+      item_id, creative_instance_id,
+      ads::mojom::BraveAdsInlineContentAdEventType::kViewed);
+  // Let p3a know an ad was viewed
+  WeeklyStorage storage(profile_->GetPrefs(), kBraveTodayWeeklyCardViewsCount);
+  storage.AddDelta(1u);
+  // Store current weekly total in p3a, ready to send on the next upload
+  uint64_t total = storage.GetWeeklySum();
+  constexpr int kBuckets[] = {0, 1, 4, 8, 14, 30, 60, 120};
+  const int* it_count = std::lower_bound(kBuckets, std::end(kBuckets), total);
+  int answer = it_count - kBuckets;
+  UMA_HISTOGRAM_EXACT_LINEAR("Brave.Today.WeeklyDisplayAdsViewedCount", answer,
+                             base::size(kBuckets) + 1);
 }
 
 void BraveNewTabMessageHandler::OnPrivatePropertiesChanged() {

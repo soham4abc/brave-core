@@ -61,6 +61,9 @@ class BraveNewTabMessageHandler : public content::WebUIMessageHandler,
   void HandleTodayOnCardVisit(const base::ListValue* args);
   void HandleTodayOnCardViews(const base::ListValue* args);
   void HandleTodayOnPromotedCardView(const base::ListValue* args);
+  void HandleTodayGetDisplayAd(const base::ListValue* args);
+  void HandleTodayOnDisplayAdVisit(const base::ListValue* args);
+  void HandleTodayOnDisplayAdView(const base::ListValue* args);
 
   void OnStatsChanged();
   void OnPreferencesChanged();
