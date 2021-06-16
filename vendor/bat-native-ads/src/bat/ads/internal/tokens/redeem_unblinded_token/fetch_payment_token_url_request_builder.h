@@ -8,10 +8,14 @@
 
 #include <string>
 
+#include "base/strings/stringprintf.h"
 #include "bat/ads/internal/account/confirmations/confirmation_info.h"
 #include "bat/ads/internal/server/url_request_builder.h"
 
 namespace ads {
+
+const char kRedeemUnblindedTokenUrlPathPrefix[] = "/v1/confirmation/";
+const char kRedeemUnblindedTokenUrlPathSuffix[] = "/paymentToken";
 
 class FetchPaymentTokenUrlRequestBuilder : UrlRequestBuilder {
  public:

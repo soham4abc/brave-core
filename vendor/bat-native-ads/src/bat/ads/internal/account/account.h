@@ -10,6 +10,7 @@
 #include <memory>
 #include <string>
 
+#include "bat/ads/ad_type.h"
 #include "bat/ads/internal/account/account_observer.h"
 #include "bat/ads/internal/account/ad_rewards/ad_rewards_delegate.h"
 #include "bat/ads/internal/account/confirmations/confirmations_observer.h"
@@ -48,6 +49,7 @@ class Account : public AdRewardsDelegate,
   void SetCatalogIssuers(const CatalogIssuersInfo& catalog_issuers);
 
   void Deposit(const std::string& creative_instance_id,
+               const AdType& ad_type,
                const ConfirmationType& confirmation_type);
 
   StatementInfo GetStatement(const int64_t from_timestamp,

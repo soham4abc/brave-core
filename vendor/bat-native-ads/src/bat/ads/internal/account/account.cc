@@ -19,6 +19,8 @@
 #include "bat/ads/internal/tokens/redeem_unblinded_payment_tokens/redeem_unblinded_payment_tokens.h"
 #include "bat/ads/internal/tokens/refill_unblinded_tokens/refill_unblinded_tokens.h"
 
+#include <iostream>
+
 namespace ads {
 
 Account::Account(privacy::TokenGeneratorInterface* token_generator)
@@ -84,8 +86,11 @@ void Account::SetCatalogIssuers(const CatalogIssuersInfo& catalog_issuers) {
 }
 
 void Account::Deposit(const std::string& creative_instance_id,
+                      const AdType& ad_type,
                       const ConfirmationType& confirmation_type) {
-  confirmations_->ConfirmAd(creative_instance_id, confirmation_type);
+  std::cerr << "DEPOSIT CALL START" << std::endl;
+  confirmations_->ConfirmAd(creative_instance_id, ad_type, confirmation_type);
+  std::cerr << "DEPOSIT CALL END" << std::endl;
 }
 
 StatementInfo Account::GetStatement(const int64_t from_timestamp,

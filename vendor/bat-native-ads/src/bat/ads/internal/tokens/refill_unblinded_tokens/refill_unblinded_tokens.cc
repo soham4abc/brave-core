@@ -21,7 +21,7 @@
 #include "bat/ads/internal/privacy/unblinded_tokens/unblinded_tokens.h"
 #include "bat/ads/internal/server/ads_server_util.h"
 #include "bat/ads/internal/time_formatting_util.h"
-#include "bat/ads/internal/tokens/refill_unblinded_tokens/get_issuers_url_request_builder.h"
+#include "bat/ads/internal/tokens/get_issuers/get_issuers_url_request_builder.h"
 #include "bat/ads/internal/tokens/refill_unblinded_tokens/get_signed_tokens_url_request_builder.h"
 #include "bat/ads/internal/tokens/refill_unblinded_tokens/request_signed_tokens_url_request_builder.h"
 #include "net/http/http_status_code.h"
@@ -207,6 +207,8 @@ void RefillUnblindedTokens::OnRequestSignedTokens(
   BLOG(6, UrlResponseToString(url_response));
   BLOG(7, UrlResponseHeadersToString(url_response));
 
+  std::cerr << "[!] DEBUG OnRequestSignedTokens: " << UrlResponseToString(url_response) << std::endl;
+
   if (url_response.status_code != net::HTTP_CREATED) {
     BLOG(1, "Failed to request signed tokens");
     OnFailedToRefillUnblindedTokens(/* should_retry */ true);
@@ -255,6 +257,8 @@ void RefillUnblindedTokens::OnGetSignedTokens(const UrlResponse& url_response) {
   BLOG(6, UrlResponseToString(url_response));
   BLOG(7, UrlResponseHeadersToString(url_response));
 
+  std::cerr << "[!] DEBUG OnGetSignedTokens: " << UrlResponseToString(url_response) << std::endl;
+
   if (url_response.status_code != net::HTTP_OK) {
     BLOG(0, "Failed to get signed tokens");
     OnFailedToRefillUnblindedTokens(/* should_retry */ true);
@@ -288,8 +292,8 @@ void RefillUnblindedTokens::OnGetSignedTokens(const UrlResponse& url_response) {
   // Validate public key
   if (!confirmation_public_keys_.count(*public_key_base64)) {
     BLOG(0, "Response public key " << *public_key_base64
-                                   << " does not match"
-                                      " any public key ");
+                                   << " does not match any"
+                                   << " confirmation public key");
     OnFailedToRefillUnblindedTokens(/* should_retry */ false);
     return;
   }

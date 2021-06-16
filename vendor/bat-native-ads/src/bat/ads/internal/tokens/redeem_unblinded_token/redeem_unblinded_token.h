@@ -6,6 +6,7 @@
 #ifndef BRAVE_VENDOR_BAT_NATIVE_ADS_SRC_BAT_ADS_INTERNAL_TOKENS_REDEEM_UNBLINDED_TOKEN_REDEEM_UNBLINDED_TOKEN_H_
 #define BRAVE_VENDOR_BAT_NATIVE_ADS_SRC_BAT_ADS_INTERNAL_TOKENS_REDEEM_UNBLINDED_TOKEN_REDEEM_UNBLINDED_TOKEN_H_
 
+#include <set>
 #include <string>
 
 #include "bat/ads/internal/tokens/redeem_unblinded_token/redeem_unblinded_token_delegate.h"
@@ -35,6 +36,11 @@ class RedeemUnblindedToken {
   void OnCreateConfirmation(const UrlResponse& url_response,
                             const ConfirmationInfo& confirmation);
 
+  void GetIssuers(const ConfirmationInfo& confirmation);
+  void OnGetIssuers(
+    const UrlResponse& url_response,
+    const ConfirmationInfo& confirmation);
+
   void FetchPaymentToken(const ConfirmationInfo& confirmation);
   void OnFetchPaymentToken(const UrlResponse& url_response,
                            const ConfirmationInfo& confirmation);
@@ -45,6 +51,8 @@ class RedeemUnblindedToken {
 
   void OnFailedToRedeemUnblindedToken(const ConfirmationInfo& confirmation,
                                       const bool should_retry);
+
+  std::set<std::string> payments_public_keys_;
 
   RedeemUnblindedTokenDelegate* delegate_ = nullptr;
 };

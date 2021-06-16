@@ -34,7 +34,11 @@ UrlRequestPtr FetchPaymentTokenUrlRequestBuilder::Build() {
 ///////////////////////////////////////////////////////////////////////////////
 
 std::string FetchPaymentTokenUrlRequestBuilder::BuildUrl() const {
-  return base::StringPrintf("%s/v1/confirmation/%s/paymentToken",
+  const std::string kRedeemUnblindedTokenUrlMask =
+      base::StringPrintf("%%s%s%%s%s",
+                         kRedeemUnblindedTokenUrlPathPrefix,
+                         kRedeemUnblindedTokenUrlPathSuffix);
+  return base::StringPrintf(kRedeemUnblindedTokenUrlMask.c_str(),
                             confirmations::server::GetHost().c_str(),
                             confirmation_.id.c_str());
 }

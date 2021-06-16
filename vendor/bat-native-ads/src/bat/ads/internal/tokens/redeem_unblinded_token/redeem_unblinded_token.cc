@@ -21,12 +21,15 @@
 #include "bat/ads/internal/privacy/challenge_bypass_ristretto_util.h"
 #include "bat/ads/internal/privacy/unblinded_tokens/unblinded_token_info.h"
 #include "bat/ads/internal/security/confirmations/confirmations_util.h"
+#include "bat/ads/internal/tokens/get_issuers/get_issuers_url_request_builder.h"
 #include "bat/ads/internal/tokens/redeem_unblinded_token/create_confirmation_url_request_builder.h"
 #include "bat/ads/internal/tokens/redeem_unblinded_token/create_confirmation_util.h"
 #include "bat/ads/internal/tokens/redeem_unblinded_token/fetch_payment_token_url_request_builder.h"
 #include "bat/ads/internal/tokens/redeem_unblinded_token/user_data/confirmation_dto_user_data_builder.h"
 #include "net/http/http_status_code.h"
 #include "wrapper.hpp"
+
+#include <iostream>
 
 namespace ads {
 
@@ -49,12 +52,14 @@ void RedeemUnblindedToken::set_delegate(
 void RedeemUnblindedToken::Redeem(const ConfirmationInfo& confirmation) {
   BLOG(1, "Redeem unblinded token");
 
+  std::cerr << "REDEEM UNBLINDED TOKEN" << std::endl;
   if (!confirmation.created) {
     CreateConfirmation(confirmation);
     return;
   }
 
-  FetchPaymentToken(confirmation);
+  std::cerr << "FETCH PAYMENT TOKEN" << std::endl;
+  GetIssuers(confirmation);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -68,6 +73,8 @@ void RedeemUnblindedToken::CreateConfirmation(
   UrlRequestPtr url_request = url_request_builder.Build();
   BLOG(5, UrlRequestToString(url_request));
   BLOG(7, UrlRequestHeadersToString(url_request));
+
+  std::cerr << "[!] DEBUG CreateConfirmation: " << UrlRequestToString(url_request) << std::endl;
 
   auto callback = std::bind(&RedeemUnblindedToken::OnCreateConfirmation, this,
                             std::placeholders::_1, confirmation);
@@ -84,6 +91,8 @@ void RedeemUnblindedToken::OnCreateConfirmation(
   BLOG(6, UrlResponseToString(url_response));
   BLOG(7, UrlResponseHeadersToString(url_response));
 
+  std::cerr << "[!] DEBUG OnCreateConfirmation: " << UrlResponseToString(url_response) << std::endl;
+
   if (url_response.status_code == net::HTTP_BAD_REQUEST) {
     // OnFetchPaymentToken handles HTTP response status codes for duplicate/bad
     // confirmations as we cannot guarantee if the confirmation was created or
@@ -94,7 +103,76 @@ void RedeemUnblindedToken::OnCreateConfirmation(
   ConfirmationInfo new_confirmation = confirmation;
   new_confirmation.created = true;
 
-  FetchPaymentToken(new_confirmation);
+  GetIssuers(new_confirmation);
+}
+
+void RedeemUnblindedToken::GetIssuers(const ConfirmationInfo& confirmation) {
+  BLOG(1, "GetIssuers");
+  BLOG(2, base::StringPrintf("GET %s", kGetIssuersUrlPath));
+
+  GetIssuersUrlRequestBuilder url_request_builder;
+  UrlRequestPtr url_request = url_request_builder.Build();
+  BLOG(5, UrlRequestToString(url_request));
+  BLOG(7, UrlRequestHeadersToString(url_request));
+
+  auto callback = std::bind(&RedeemUnblindedToken::OnGetIssuers, this,
+                            std::placeholders::_1, confirmation);
+  AdsClientHelper::Get()->UrlRequest(std::move(url_request), callback);
+}
+
+void RedeemUnblindedToken::OnGetIssuers(
+    const UrlResponse& url_response,
+    const ConfirmationInfo& confirmation) {
+  BLOG(1, "OnGetIssuers");
+
+  BLOG(6, UrlResponseToString(url_response));
+  BLOG(7, UrlResponseHeadersToString(url_response));
+
+  if (url_response.status_code != net::HTTP_OK) {
+    BLOG(0, "Failed to get issuers");
+    OnFailedToRedeemUnblindedToken(confirmation, /* should_retry */ true);
+    return;
+  }
+
+  // Parse JSON response
+  base::Optional<base::Value> issuer_list =
+      base::JSONReader::Read(url_response.body);
+
+  if (!issuer_list || !issuer_list->is_list()) {
+    BLOG(3, "Failed to parse response: " << url_response.body);
+    OnFailedToRedeemUnblindedToken(confirmation, /* should_retry */ false);
+    return;
+  }
+
+  payments_public_keys_.clear();
+  for (const auto& value : issuer_list->GetList()) {
+    if (!value.is_dict()) {
+      BLOG(3, "Failed to parse response: " << url_response.body);
+      OnFailedToRedeemUnblindedToken(confirmation, /* should_retry */ false);
+      return;
+    }
+
+    const base::Value* public_key_dict = value.FindPath("");
+    const std::string* public_key_name = public_key_dict->FindStringKey("name");
+
+    if (!public_key_name) {
+      continue;
+    }
+
+    if (*public_key_name != std::string("payments")) {
+      continue;
+    }
+
+    const base::Value* public_key_list = public_key_dict->FindListKey("publicKeys");
+    for (const auto& public_key : public_key_list->GetList()) {
+      if (!public_key.is_string()) {
+        continue;
+      }
+      payments_public_keys_.insert(public_key.GetString());
+    }
+  }
+
+  FetchPaymentToken(confirmation);
 }
 
 void RedeemUnblindedToken::FetchPaymentToken(
@@ -104,6 +182,7 @@ void RedeemUnblindedToken::FetchPaymentToken(
   BLOG(1, "FetchPaymentToken");
   BLOG(2, "GET /v1/confirmation/{confirmation_id}/paymentToken");
 
+  std::cerr << "FETCH PAYMENT TOKEN URL BUILD" << std::endl;
   FetchPaymentTokenUrlRequestBuilder url_request_builder(confirmation);
   UrlRequestPtr url_request = url_request_builder.Build();
   BLOG(5, UrlRequestToString(url_request));
@@ -121,6 +200,8 @@ void RedeemUnblindedToken::OnFetchPaymentToken(
 
   BLOG(6, UrlResponseToString(url_response));
   BLOG(7, UrlResponseHeadersToString(url_response));
+
+  std::cerr << "[!] DEBUG OnFetchPaymentToken: " << UrlResponseToString(url_response) << std::endl;
 
   if (url_response.status_code == net::HTTP_NOT_FOUND) {
     BLOG(1, "Confirmation not found");
@@ -200,6 +281,14 @@ void RedeemUnblindedToken::OnFetchPaymentToken(
     return;
   }
 
+  if (!payments_public_keys_.count(*public_key_base64)) {
+    BLOG(0, "Response public key " << *public_key_base64
+                                   << " does not match"
+                                   << " any payments public key");
+    OnFailedToRedeemUnblindedToken(confirmation, /* should_retry */ true);
+    return;
+  }
+
   // Get batch dleq proof
   const std::string* batch_dleq_proof_base64 =
       payment_token_dictionary->FindStringKey("batchProof");
@@ -267,6 +356,8 @@ void RedeemUnblindedToken::OnFetchPaymentToken(
   privacy::UnblindedTokenInfo unblinded_payment_token;
   unblinded_payment_token.value = batch_dleq_proof_unblinded_tokens.front();
   unblinded_payment_token.public_key = public_key;
+  unblinded_payment_token.confirmation_type = confirmation.type;
+  unblinded_payment_token.ad_type = confirmation.ad_type;
 
   OnDidRedeemUnblindedToken(confirmation, unblinded_payment_token);
 }

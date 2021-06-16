@@ -14,6 +14,8 @@
 #include "bat/ads/internal/privacy/unblinded_tokens/unblinded_token_info.h"
 #include "bat/ads/internal/server/url_request_builder.h"
 
+const char kRedeemUnblindedPaymentTokensUrlPath[] = "/v1/confirmation/payment/";
+
 namespace ads {
 
 class RedeemUnblindedPaymentTokensUrlRequestBuilder : UrlRequestBuilder {

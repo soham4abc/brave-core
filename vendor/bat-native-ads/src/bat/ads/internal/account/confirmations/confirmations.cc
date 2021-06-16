@@ -25,6 +25,8 @@
 #include "bat/ads/internal/tokens/redeem_unblinded_token/redeem_unblinded_token.h"
 #include "bat/ads/internal/tokens/redeem_unblinded_token/user_data/confirmation_dto_user_data_builder.h"
 
+#include <iostream>
+
 namespace ads {
 
 namespace {
@@ -83,6 +85,7 @@ void Confirmations::SetCatalogIssuers(
 }
 
 void Confirmations::ConfirmAd(const std::string& creative_instance_id,
+                              const AdType& ad_type,
                               const ConfirmationType& confirmation_type) {
   BLOG(1, "Confirming " << std::string(confirmation_type)
                         << " ad for creative instance id "
@@ -104,9 +107,11 @@ void Confirmations::ConfirmAd(const std::string& creative_instance_id,
         const base::DictionaryValue* user_data_dictionary = nullptr;
         user_data.GetAsDictionary(&user_data_dictionary);
         const ConfirmationInfo confirmation = CreateConfirmation(
-            creative_instance_id, confirmation_type, *user_data_dictionary);
+            creative_instance_id, confirmation_type, ad_type, *user_data_dictionary);
         redeem_unblinded_token_->Redeem(confirmation);
       });
+
+  std::cerr << "CONFIRMATION SUCCESS!" << std::endl;
 }
 
 void Confirmations::RetryAfterDelay() {
@@ -126,6 +131,7 @@ void Confirmations::RetryAfterDelay() {
 ConfirmationInfo Confirmations::CreateConfirmation(
     const std::string& creative_instance_id,
     const ConfirmationType& confirmation_type,
+    const AdType& ad_type,
     const base::DictionaryValue& user_data) const {
   DCHECK(!creative_instance_id.empty());
   DCHECK(confirmation_type != ConfirmationType::kUndefined);
@@ -133,6 +139,7 @@ ConfirmationInfo Confirmations::CreateConfirmation(
 
   confirmation.id = base::GenerateGUID();
   confirmation.creative_instance_id = creative_instance_id;
+  confirmation.ad_type = ad_type;
   confirmation.type = confirmation_type;
 
   const privacy::UnblindedTokenInfo unblinded_token =
@@ -177,7 +184,7 @@ void Confirmations::CreateNewConfirmationAndAppendToRetryQueue(
 
         const ConfirmationInfo new_confirmation =
             CreateConfirmation(confirmation.creative_instance_id,
-                               confirmation.type, *user_data_dictionary);
+                               confirmation.type, confirmation.ad_type, *user_data_dictionary);
         AppendToRetryQueue(new_confirmation);
       });
 }

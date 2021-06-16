@@ -49,7 +49,9 @@ UrlRequestPtr RedeemUnblindedPaymentTokensUrlRequestBuilder::Build() {
 ///////////////////////////////////////////////////////////////////////////////
 
 std::string RedeemUnblindedPaymentTokensUrlRequestBuilder::BuildUrl() const {
-  return base::StringPrintf("%s/v1/confirmation/payment/%s",
+  const std::string kRedeemUnblindedPaymentTokensUrlMask =
+      base::StringPrintf("%%s%s%%s", kRedeemUnblindedPaymentTokensUrlPath);
+  return base::StringPrintf(kRedeemUnblindedPaymentTokensUrlMask.c_str(),
                             confirmations::server::GetHost().c_str(),
                             wallet_.id.c_str());
 }
@@ -99,6 +101,14 @@ RedeemUnblindedPaymentTokensUrlRequestBuilder::CreatePaymentRequestDTO(
 
     base::Value credential = CreateCredential(unblinded_token, payload);
     payment_credential.SetKey("credential", base::Value(std::move(credential)));
+
+    payment_credential.SetKey(
+        "creative_type",
+        base::Value(std::string(unblinded_token.ad_type)));
+
+    payment_credential.SetKey(
+        "confirmation_type",
+        base::Value(std::string(unblinded_token.confirmation_type)));
 
     payment_credential.SetKey(
         "publicKey", base::Value(unblinded_token.public_key.encode_base64()));
