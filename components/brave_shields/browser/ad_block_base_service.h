@@ -17,8 +17,8 @@
 #include "base/memory/weak_ptr.h"
 #include "base/sequence_checker.h"
 #include "base/values.h"
-#include "brave/components/brave_shields/browser/base_brave_shields_service.h"
 #include "brave/components/brave_component_updater/browser/dat_file_util.h"
+#include "brave/components/brave_shields/browser/base_brave_shields_service.h"
 #include "third_party/blink/public/mojom/loader/resource_load_info.mojom-shared.h"
 
 class AdBlockServiceTest;
@@ -66,7 +66,9 @@ class AdBlockBaseService : public BaseBraveShieldsService {
   friend class ::AdBlockServiceTest;
   bool Init() override;
 
-  void GetDATFileData(const base::FilePath& dat_file_path);
+  void GetDATFileData(const base::FilePath& dat_file_path,
+                      bool deserialize = true,
+                      base::OnceClosure callback = base::OnceClosure());
   void AddKnownTagsToAdBlockInstance();
   void AddKnownResourcesToAdBlockInstance();
   void ResetForTest(const std::string& rules, const std::string& resources);
@@ -74,9 +76,9 @@ class AdBlockBaseService : public BaseBraveShieldsService {
   std::unique_ptr<adblock::Engine> ad_block_client_;
 
  private:
-  void UpdateAdBlockClient(
-      std::unique_ptr<adblock::Engine> ad_block_client);
-  void OnGetDATFileData(GetDATFileDataResult result);
+  void UpdateAdBlockClient(std::unique_ptr<adblock::Engine> ad_block_client);
+  void OnGetDATFileData(base::OnceClosure callback,
+                        GetDATFileDataResult result);
   void OnPreferenceChanges(const std::string& pref_name);
 
   std::vector<std::string> tags_;
