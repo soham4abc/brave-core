@@ -53,6 +53,8 @@ void RedeemUnblindedPaymentTokens::MaybeRedeemAfterDelay(
     return;
   }
 
+  std::cerr << "[DEBUG] MaybeRedeemAfterDelay timer passed" << std::endl;
+
   if (!wallet.IsValid()) {
     BLOG(0, "Failed to redeem unblinded payment tokens due to invalid wallet");
 
@@ -62,6 +64,8 @@ void RedeemUnblindedPaymentTokens::MaybeRedeemAfterDelay(
 
     return;
   }
+
+  std::cerr << "[DEBUG] MaybeRedeemAfterDelay wallet check passed" << std::endl;
 
   wallet_ = wallet;
 
