@@ -257,7 +257,7 @@ void AdblockDOMHandler::HandleViewSubscriptionSource(
     return;
   }
 
-  // TODO - the ui shouldn't have to figure this out
+  // TODO(bridiver) - the ui shouldn't have to figure this out
   const auto cached_list_path =
       g_brave_browser_process->ad_block_service()
           ->subscription_service_manager()

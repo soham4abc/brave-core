@@ -5,6 +5,9 @@
 
 #include "brave/browser/brave_shields/ad_block_subscription_download_manager_getter.h"
 
+#include <memory>
+#include <utility>
+
 #include "base/bind.h"
 #include "base/callback.h"
 #include "base/memory/singleton.h"

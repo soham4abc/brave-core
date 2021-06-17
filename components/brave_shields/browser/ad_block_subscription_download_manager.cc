@@ -24,9 +24,10 @@
 #include "storage/browser/blob/blob_data_handle.h"
 #include "storage/browser/blob/write_blob_to_file.h"
 
+// TODO(bridiver) which do I need
 #include "components/services/storage/public/mojom/blob_storage_context.mojom.h"
-#include "storage/browser/blob/blob_storage_context.h"
 #include "storage/browser/blob/blob_impl.h"
+#include "storage/browser/blob/blob_storage_context.h"
 
 namespace brave_shields {
 
@@ -179,13 +180,11 @@ void AdBlockSubscriptionDownloadManager::OnDownloadSucceeded(
 
   background_task_runner_->PostTaskAndReplyWithResult(
       FROM_HERE,
-      base::BindOnce(
-          &EnsureDirExists,
-          subscription_manager_->GetSubscriptionPath(download_url)),
+      base::BindOnce(&EnsureDirExists,
+                     subscription_manager_->GetSubscriptionPath(download_url)),
       base::BindOnce(&AdBlockSubscriptionDownloadManager::OnDirCreated,
-          ui_weak_ptr_factory_.GetWeakPtr(),
-          std::move(data_handle),
-          download_url));
+                     ui_weak_ptr_factory_.GetWeakPtr(), std::move(data_handle),
+                     download_url));
 }
 
 void AdBlockSubscriptionDownloadManager::OnDirCreated(
@@ -197,8 +196,9 @@ void AdBlockSubscriptionDownloadManager::OnDirCreated(
     return;
   }
 
-  base::FilePath list_path = subscription_manager_->GetSubscriptionPath(download_url)
-                                 .AppendASCII(kCustomSubscriptionListText);
+  base::FilePath list_path =
+      subscription_manager_->GetSubscriptionPath(download_url)
+          .AppendASCII(kCustomSubscriptionListText);
 
   auto context = std::make_unique<storage::BlobStorageContext>();
   mojo::Remote<storage::mojom::BlobStorageContext> remote_context;

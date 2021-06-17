@@ -251,7 +251,7 @@ void AdBlockBaseService::OnGetDATFileData(base::OnceClosure callback,
       FROM_HERE, base::BindOnce(&AdBlockBaseService::UpdateAdBlockClient,
                                 base::Unretained(this),
                                 std::move(result.first)));
-  // TODO(bridiver) - this needs to happen after adblock client is actually reset
+  // TODO(bridiver) this needs to happen after adblock client is actually reset
   std::move(callback).Run();
 }
 
