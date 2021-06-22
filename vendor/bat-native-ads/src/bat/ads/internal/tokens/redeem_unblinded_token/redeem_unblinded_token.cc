@@ -21,7 +21,6 @@
 #include "bat/ads/internal/privacy/challenge_bypass_ristretto_util.h"
 #include "bat/ads/internal/privacy/unblinded_tokens/unblinded_token_info.h"
 #include "bat/ads/internal/security/confirmations/confirmations_util.h"
-#include "bat/ads/internal/tokens/get_issuers/get_issuers_url_request_builder.h"
 #include "bat/ads/internal/tokens/redeem_unblinded_token/create_confirmation_url_request_builder.h"
 #include "bat/ads/internal/tokens/redeem_unblinded_token/create_confirmation_util.h"
 #include "bat/ads/internal/tokens/redeem_unblinded_token/fetch_payment_token_url_request_builder.h"
@@ -40,7 +39,7 @@ using challenge_bypass_ristretto::SignedToken;
 using challenge_bypass_ristretto::Token;
 using challenge_bypass_ristretto::UnblindedToken;
 
-RedeemUnblindedToken::RedeemUnblindedToken() = default;
+RedeemUnblindedToken::RedeemUnblindedToken() : get_issuers_(std::make_unique<GetIssuers>()) {}
 
 RedeemUnblindedToken::~RedeemUnblindedToken() = default;
 
@@ -59,7 +58,7 @@ void RedeemUnblindedToken::Redeem(const ConfirmationInfo& confirmation) {
   }
 
   std::cerr << "FETCH PAYMENT TOKEN" << std::endl;
-  GetIssuers(confirmation);
+  RequestIssuers(confirmation);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -103,73 +102,18 @@ void RedeemUnblindedToken::OnCreateConfirmation(
   ConfirmationInfo new_confirmation = confirmation;
   new_confirmation.created = true;
 
-  GetIssuers(new_confirmation);
+  RequestIssuers(new_confirmation);
 }
 
-void RedeemUnblindedToken::GetIssuers(const ConfirmationInfo& confirmation) {
-  BLOG(1, "GetIssuers");
-  BLOG(2, base::StringPrintf("GET %s", kGetIssuersUrlPath));
-
-  GetIssuersUrlRequestBuilder url_request_builder;
-  UrlRequestPtr url_request = url_request_builder.Build();
-  BLOG(5, UrlRequestToString(url_request));
-  BLOG(7, UrlRequestHeadersToString(url_request));
-
-  auto callback = std::bind(&RedeemUnblindedToken::OnGetIssuers, this,
-                            std::placeholders::_1, confirmation);
-  AdsClientHelper::Get()->UrlRequest(std::move(url_request), callback);
+void RedeemUnblindedToken::RequestIssuers(const ConfirmationInfo& confirmation) {
+  auto callback = std::bind(&RedeemUnblindedToken::OnRequestIssuers, this, confirmation);
+  get_issuers_->RequestIssuers(callback);
 }
 
-void RedeemUnblindedToken::OnGetIssuers(
-    const UrlResponse& url_response,
-    const ConfirmationInfo& confirmation) {
-  BLOG(1, "OnGetIssuers");
-
-  BLOG(6, UrlResponseToString(url_response));
-  BLOG(7, UrlResponseHeadersToString(url_response));
-
-  if (url_response.status_code != net::HTTP_OK) {
-    BLOG(0, "Failed to get issuers");
+void RedeemUnblindedToken::OnRequestIssuers(const ConfirmationInfo& confirmation) {
+  if (!get_issuers_->IsInitialized()) {
     OnFailedToRedeemUnblindedToken(confirmation, /* should_retry */ true);
     return;
-  }
-
-  // Parse JSON response
-  base::Optional<base::Value> issuer_list =
-      base::JSONReader::Read(url_response.body);
-
-  if (!issuer_list || !issuer_list->is_list()) {
-    BLOG(3, "Failed to parse response: " << url_response.body);
-    OnFailedToRedeemUnblindedToken(confirmation, /* should_retry */ false);
-    return;
-  }
-
-  payments_public_keys_.clear();
-  for (const auto& value : issuer_list->GetList()) {
-    if (!value.is_dict()) {
-      BLOG(3, "Failed to parse response: " << url_response.body);
-      OnFailedToRedeemUnblindedToken(confirmation, /* should_retry */ false);
-      return;
-    }
-
-    const base::Value* public_key_dict = value.FindPath("");
-    const std::string* public_key_name = public_key_dict->FindStringKey("name");
-
-    if (!public_key_name) {
-      continue;
-    }
-
-    if (*public_key_name != std::string("payments")) {
-      continue;
-    }
-
-    const base::Value* public_key_list = public_key_dict->FindListKey("publicKeys");
-    for (const auto& public_key : public_key_list->GetList()) {
-      if (!public_key.is_string()) {
-        continue;
-      }
-      payments_public_keys_.insert(public_key.GetString());
-    }
   }
 
   FetchPaymentToken(confirmation);
@@ -197,6 +141,11 @@ void RedeemUnblindedToken::OnFetchPaymentToken(
     const UrlResponse& url_response,
     const ConfirmationInfo& confirmation) {
   BLOG(1, "OnFetchPaymentToken");
+
+  if (!get_issuers_->IsInitialized()) {
+    OnFailedToRedeemUnblindedToken(confirmation, /* should_retry */ true);
+    return;
+  }
 
   BLOG(6, UrlResponseToString(url_response));
   BLOG(7, UrlResponseHeadersToString(url_response));
@@ -281,7 +230,7 @@ void RedeemUnblindedToken::OnFetchPaymentToken(
     return;
   }
 
-  if (!payments_public_keys_.count(*public_key_base64)) {
+  if (!get_issuers_->FindPublicKey("payments", *public_key_base64)) {
     BLOG(0, "Response public key " << *public_key_base64
                                    << " does not match"
                                    << " any payments public key");

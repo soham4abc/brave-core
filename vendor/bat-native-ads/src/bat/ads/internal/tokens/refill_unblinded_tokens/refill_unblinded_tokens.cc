@@ -46,7 +46,7 @@ const int kMaximumUnblindedTokens = 50;
 
 RefillUnblindedTokens::RefillUnblindedTokens(
     privacy::TokenGeneratorInterface* token_generator)
-    : token_generator_(token_generator) {
+    : get_issuers_(std::make_unique<GetIssuers>()), token_generator_(token_generator) {
   DCHECK(token_generator_);
 }
 
@@ -107,72 +107,19 @@ void RefillUnblindedTokens::Refill() {
   is_processing_ = true;
 
   nonce_ = "";
-  confirmation_public_keys_.clear();
 
   GetIssuers();
 }
 
-void RefillUnblindedTokens::GetIssuers() {
-  BLOG(1, "GetIssuers");
-  BLOG(2, base::StringPrintf("GET %s", kGetIssuersUrlPath));
-
-  GetIssuersUrlRequestBuilder url_request_builder;
-  UrlRequestPtr url_request = url_request_builder.Build();
-  BLOG(5, UrlRequestToString(url_request));
-  BLOG(7, UrlRequestHeadersToString(url_request));
-
-  auto callback = std::bind(&RefillUnblindedTokens::OnGetIssuers, this,
-                            std::placeholders::_1);
-  AdsClientHelper::Get()->UrlRequest(std::move(url_request), callback);
+void RefillUnblindedTokens::RequestIssuers() {
+  auto callback = std::bind(&RefillUnblindedTokens::OnRequestIssuers, this);
+  get_issuers_->RequestIssuers(callback);
 }
 
-void RefillUnblindedTokens::OnGetIssuers(const UrlResponse& url_response) {
-  BLOG(1, "OnGetIssuers");
-
-  BLOG(6, UrlResponseToString(url_response));
-  BLOG(7, UrlResponseHeadersToString(url_response));
-
-  if (url_response.status_code != net::HTTP_OK) {
-    BLOG(0, "Failed to get issuers");
+void RefillUnblindedTokens::OnRequestIssuers() {
+  if (!get_issuers_->IsInitialized()) {
     OnFailedToRefillUnblindedTokens(/* should_retry */ true);
     return;
-  }
-
-  // Parse JSON response
-  base::Optional<base::Value> issuer_list =
-      base::JSONReader::Read(url_response.body);
-
-  if (!issuer_list || !issuer_list->is_list()) {
-    BLOG(3, "Failed to parse response: " << url_response.body);
-    OnFailedToRefillUnblindedTokens(/* should_retry */ false);
-    return;
-  }
-
-  for (const auto& value : issuer_list->GetList()) {
-    if (!value.is_dict()) {
-      BLOG(3, "Failed to parse response: " << url_response.body);
-      OnFailedToRefillUnblindedTokens(/* should_retry */ false);
-      return;
-    }
-
-    const base::Value* public_key_dict = value.FindPath("");
-    const std::string* public_key_name = public_key_dict->FindStringKey("name");
-
-    if (!public_key_name) {
-      continue;
-    }
-
-    if (*public_key_name != std::string("confirmations")) {
-      continue;
-    }
-
-    const base::Value* public_key_list = public_key_dict->FindListKey("publicKeys");
-    for (const auto& public_key : public_key_list->GetList()) {
-      if (!public_key.is_string()) {
-        continue;
-      }
-      confirmation_public_keys_.insert(public_key.GetString());
-    }
   }
 
   RequestSignedTokens();
@@ -254,6 +201,11 @@ void RefillUnblindedTokens::GetSignedTokens() {
 void RefillUnblindedTokens::OnGetSignedTokens(const UrlResponse& url_response) {
   BLOG(1, "OnGetSignedTokens");
 
+  if (!get_issuers_->IsInitialized()) {
+    OnFailedToRefillUnblindedTokens(/* should_retry */ true);
+    return;
+  }
+
   BLOG(6, UrlResponseToString(url_response));
   BLOG(7, UrlResponseHeadersToString(url_response));
 
@@ -290,7 +242,7 @@ void RefillUnblindedTokens::OnGetSignedTokens(const UrlResponse& url_response) {
   }
 
   // Validate public key
-  if (!confirmation_public_keys_.count(*public_key_base64)) {
+  if (!get_issuers_->FindPublicKey("confirmations", *public_key_base64)) {
     BLOG(0, "Response public key " << *public_key_base64
                                    << " does not match any"
                                    << " confirmation public key");

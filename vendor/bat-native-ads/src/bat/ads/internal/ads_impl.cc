@@ -686,7 +686,7 @@ void AdsImpl::OnAdTransfer(const AdInfo& ad) {
 void AdsImpl::OnConversion(
     const ConversionQueueItemInfo& conversion_queue_item) {
   account_->Deposit(conversion_queue_item.creative_instance_id,
-                    AdType::kUndefined,
+                    conversion_queue_item.ad_type,
                     ConfirmationType::kConversion);
 }
 

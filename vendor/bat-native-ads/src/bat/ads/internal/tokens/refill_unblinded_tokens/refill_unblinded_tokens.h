@@ -14,6 +14,7 @@
 #include "bat/ads/internal/account/wallet/wallet_info.h"
 #include "bat/ads/internal/backoff_timer.h"
 #include "bat/ads/internal/privacy/tokens/token_generator_interface.h"
+#include "bat/ads/internal/tokens/get_issuers/get_issuers.h"
 #include "bat/ads/internal/tokens/refill_unblinded_tokens/refill_unblinded_tokens_delegate.h"
 #include "bat/ads/mojom.h"
 #include "bat/ads/result.h"
@@ -39,15 +40,13 @@ class RefillUnblindedTokens {
   WalletInfo wallet_;
   std::string nonce_;
 
-  std::set<std::string> confirmation_public_keys_;
-
   std::vector<Token> tokens_;
   std::vector<BlindedToken> blinded_tokens_;
 
   void Refill();
 
-  void GetIssuers();
-  void OnGetIssuers(const UrlResponse& url_response);
+  void RequestIssuers();
+  void OnRequestIssuers();
 
   void RequestSignedTokens();
   void OnRequestSignedTokens(const UrlResponse& url_response);
@@ -68,6 +67,8 @@ class RefillUnblindedTokens {
   int CalculateAmountOfTokensToRefill() const;
 
   bool is_processing_ = false;
+
+  std::unique_ptr<GetIssuers> get_issuers_;
 
   privacy::TokenGeneratorInterface* token_generator_;  // NOT OWNED
 
