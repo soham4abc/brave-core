@@ -11,6 +11,8 @@
 #include "bat/ads/internal/tokens/get_issuers/get_issuers_url_request_builder.h"
 #include "net/http/http_status_code.h"
 
+#include <iostream>
+
 namespace ads {
 
 GetIssuers::GetIssuers() : initialized_(false) {}
@@ -22,6 +24,8 @@ void GetIssuers::set_delegate(GetIssuersDelegate* delegate) {
 }
 
 void GetIssuers::RequestIssuers(const ConfirmationCallback& callback) {
+  std::cerr << "REQ ISS 1" << std::endl;
+
   initialized_ = false;
 
   BLOG(1, "RequestIssuers");
@@ -32,36 +36,52 @@ void GetIssuers::RequestIssuers(const ConfirmationCallback& callback) {
   BLOG(5, UrlRequestToString(url_request));
   BLOG(7, UrlRequestHeadersToString(url_request));
 
+  std::cerr << "REQ ISS 2" << std::endl;
+
   auto request_callback = std::bind(&GetIssuers::OnRequestIssuers, this,
                                     std::placeholders::_1, callback);
   AdsClientHelper::Get()->UrlRequest(std::move(url_request), request_callback);
+  std::cerr << "REQ ISS 3" << std::endl;
 }
 
 void GetIssuers::OnRequestIssuers(
     const UrlResponse& url_response,
     const ConfirmationCallback& callback) {
+  std::cerr << "REQ ISS 4" << std::endl;
   BLOG(1, "OnRequestIssuers");
 
   BLOG(6, UrlResponseToString(url_response));
   BLOG(7, UrlResponseHeadersToString(url_response));
 
+  std::cerr << "ISS: " << UrlResponseToString(url_response) << std::endl;
+
   if (url_response.status_code != net::HTTP_OK) {
     BLOG(0, "Failed to get issuers");
     initialized_ = false;
+    OnFailedToGetIssuers();
     return;
   }
+
+  std::cerr << "REQ ISS 5" << std::endl;
 
   bool parsed = ParseResponseBody(url_response);
   if (!parsed) {
     BLOG(3, "Failed to parse response: " << url_response.body);
     initialized_ = false;
+    OnFailedToGetIssuers();
     return;
   }
 
+  std::cerr << "REQ ISS 6" << std::endl;
+
   initialized_ = true;
+  OnDidGetIssuers();
+
   if (callback) {
     callback();
   }
+
+  std::cerr << "REQ ISS 7" << std::endl;
 }
 
 bool GetIssuers::ParseResponseBody(const UrlResponse& url_response) {
@@ -121,6 +141,7 @@ void GetIssuers::OnDidGetIssuers() {
     return;
   }
 
+  std::cerr << "REQ ISS DID" << std::endl;
   delegate_->OnDidGetIssuers();
 }
 
@@ -129,6 +150,7 @@ void GetIssuers::OnFailedToGetIssuers() {
     return;
   }
 
+  std::cerr << "REQ ISS DIDN'T" << std::endl;
   delegate_->OnFailedToGetIssuers();
 }
 
