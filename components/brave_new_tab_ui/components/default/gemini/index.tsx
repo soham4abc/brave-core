@@ -25,7 +25,7 @@ import {
   ListIcon,
   ListImg,
   ListLabel,
-  AssetIconWrapper,
+  // AssetIconWrapper,
   AssetIcon,
   SearchInput,
   DetailIcons,
@@ -86,7 +86,8 @@ import { CaratLeftIcon, CaratDownIcon } from 'brave-ui/components/icons'
 
 // Utils
 import geminiData from './data'
-import cryptoColors from '../exchangeWidget/colors'
+// import cryptoColors from '../exchangeWidget/colors'
+import IconAsset from '../../../widgets/shared/iconAsset'
 import { getLocale } from '../../../../common/locale'
 
 interface State {
@@ -352,34 +353,24 @@ class Gemini extends React.PureComponent<Props, State> {
   }
 
   renderSmallIconAsset = (key: string, isDetail: boolean = false) => {
-    const iconColor = cryptoColors[key] || '#fff'
-
     return (
-      <AssetIcon
-        isDetail={isDetail}
-        style={{ color: iconColor }}
-        className={`crypto-icon icon-${key}`}
-      />
+      <AssetIcon>
+        <IconAsset iconKey={key} size={18} />
+      </AssetIcon>
     )
   }
 
   renderIconAsset = (key: string, isDetail: boolean = false) => {
-    const iconColor = cryptoColors[key] || '#fff'
-    const styles = { color: '#000' }
-
+    const styles = {}
     if (this.props.selectedView === 'balance') {
       styles['marginTop'] = '5px'
       styles['marginLeft'] = '5px'
     }
 
     return (
-      <AssetIconWrapper style={{ background: iconColor }}>
-        <AssetIcon
-          isDetail={isDetail}
-          style={styles}
-          className={`crypto-icon icon-${key}`}
-        />
-      </AssetIconWrapper>
+      <AssetIcon style={styles}>
+        <IconAsset iconKey={key} />
+      </AssetIcon>
     )
   }
 
