@@ -14,6 +14,8 @@
 
 namespace ads {
 
+const char kCreateConfirmationUrlPath[] = "/v1/confirmation/";
+
 namespace privacy {
 struct UnblindedTokenInfo;
 }  // namespace privacy
