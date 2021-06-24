@@ -16,15 +16,13 @@ source_set("browser") {
     "//brave/components/brave_component_updater/browser",
     "//brave/components/brave_shields/browser",
     "//brave/components/debounce/common",
+    "//brave/extensions:common",
     "//components/content_settings/core/browser",
     "//content/public/browser",
     "//content/public/common",
-    "//extensions/browser",
     "//services/network/public/cpp",
     "//services/network/public/mojom",
     "//third_party/blink/public/common",
     "//url",
   ]
-
-  public_deps = [ "buildflags" ]
 }

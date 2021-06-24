@@ -30,6 +30,7 @@
 #include "brave/components/brave_shields/browser/https_everywhere_service.h"
 #include "brave/components/brave_sync/buildflags/buildflags.h"
 #include "brave/components/brave_sync/network_time_helper.h"
+#include "brave/components/debounce/browser/debounce_download_service.h"
 #include "brave/components/ntp_background_images/browser/features.h"
 #include "brave/components/ntp_background_images/browser/ntp_background_images_service.h"
 #include "brave/components/p3a/brave_histogram_rewrite.h"
@@ -63,10 +64,6 @@
 
 #if BUILDFLAG(ENABLE_GREASELION)
 #include "brave/components/greaselion/browser/greaselion_download_service.h"
-#endif
-
-#if BUILDFLAG(ENABLE_DEBOUNCE)
-#include "brave/components/debounce/browser/debounce_download_service.h"
 #endif
 
 #if BUILDFLAG(ENABLE_TOR)
@@ -192,9 +189,7 @@ void BraveBrowserProcessImpl::StartBraveServices() {
 #if BUILDFLAG(ENABLE_GREASELION)
   greaselion_download_service();
 #endif
-#if BUILDFLAG(ENABLE_DEBOUNCE)
   debounce_download_service();
-#endif
 #if BUILDFLAG(ENABLE_SPEEDREADER)
   speedreader_rewriter_service();
 #endif
@@ -267,16 +262,15 @@ BraveBrowserProcessImpl::greaselion_download_service() {
 }
 #endif
 
-#if BUILDFLAG(ENABLE_DEBOUNCE)
 debounce::DebounceDownloadService*
 BraveBrowserProcessImpl::debounce_download_service() {
   if (!debounce_download_service_) {
     debounce_download_service_ =
-        debounce::DebounceDownloadServiceFactory(local_data_files_service());
+        std::make_unique<debounce::DebounceDownloadService>(
+            local_data_files_service());
   }
   return debounce_download_service_.get();
 }
-#endif
 
 brave_shields::HTTPSEverywhereService*
 BraveBrowserProcessImpl::https_everywhere_service() {

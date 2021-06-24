@@ -46,7 +46,8 @@ const char kBraveDomainBlockDescription[] =
     "Enable support for blocking domains with an interstitial page";
 const char kBraveDebounceName[] = "Enable debouncing";
 const char kBraveDebounceDescription[] =
-    "Enable support for skipping certain tracking URLs.";
+    "Enable support for skipping tracking URLs and stripping tracking "
+    "parameters.";
 const char kBraveExtensionNetworkBlockingName[] =
     "Enable extension network blocking";
 const char kBraveExtensionNetworkBlockingDescription[] =

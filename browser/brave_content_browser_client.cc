@@ -470,7 +470,6 @@ BraveContentBrowserClient::CreateURLLoaderThrottles(
   }
 #endif  // ENABLE_SPEEDREADER
 
-#if BUILDFLAG(ENABLE_DEBOUNCE)
   auto* settings_map = HostContentSettingsMapFactory::GetForProfile(
       Profile::FromBrowserContext(browser_context));
   if (std::unique_ptr<blink::URLLoaderThrottle> debounce_throttle =
@@ -479,7 +478,6 @@ BraveContentBrowserClient::CreateURLLoaderThrottles(
                   browser_context),
               settings_map))
     result.push_back(std::move(debounce_throttle));
-#endif  // ENABLE_DEBOUNCE
 
   return result;
 }

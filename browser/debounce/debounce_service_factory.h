@@ -33,7 +33,8 @@ class DebounceServiceFactory : public BrowserContextKeyedServiceFactory {
       content::BrowserContext* context) const override;
   bool ServiceIsNULLWhileTesting() const override;
 
-  DISALLOW_COPY_AND_ASSIGN(DebounceServiceFactory);
+  DebounceServiceFactory(const DebounceServiceFactory&) = delete;
+  DebounceServiceFactory& operator=(const DebounceServiceFactory&) = delete;
 };
 
 }  // namespace debounce

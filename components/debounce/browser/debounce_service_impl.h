@@ -9,6 +9,8 @@
 #include "base/macros.h"
 #include "base/memory/weak_ptr.h"
 #include "brave/components/debounce/browser/debounce_service.h"
+#include "net/cookies/site_for_cookies.h"
+#include "url/gurl.h"
 
 namespace debounce {
 

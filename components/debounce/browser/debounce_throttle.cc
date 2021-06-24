@@ -52,7 +52,7 @@ void DebounceThrottle::WillStartRequest(network::ResourceRequest* request,
                                    &debounced_url))
     return;
 
-  VLOG(1) << request->url << " -> " << debounced_url;
+  VLOG(1) << "Debouncing rule applied: " << request->url << " -> " << debounced_url;
   request->url = debounced_url;
 
   // Check if we're debouncing to a different site (where "different" is defined

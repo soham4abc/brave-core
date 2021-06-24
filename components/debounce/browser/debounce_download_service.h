@@ -10,11 +10,11 @@
 #include <string>
 #include <vector>
 
+#include "base/containers/flat_set.h"
 #include "base/files/file_path.h"
 #include "base/memory/weak_ptr.h"
 #include "base/observer_list.h"
 #include "base/sequence_checker.h"
-#include "base/sequenced_task_runner.h"
 #include "base/values.h"
 #include "brave/components/brave_component_updater/browser/local_data_files_observer.h"
 #include "brave/components/debounce/browser/debounce_service.h"
@@ -47,7 +47,9 @@ class DebounceRule {
   void Parse(base::ListValue* include_value,
              base::ListValue* exclude_value,
              const std::string& action,
-             const std::string& param);
+             const std::string& param,
+             std::vector<std::string>* hosts,
+             std::vector<std::string>* params);
   bool Apply(const GURL& original_url,
              const net::SiteForCookies& original_site_for_cookies,
              GURL* final_url);
@@ -70,7 +72,8 @@ class DebounceDownloadService : public LocalDataFilesObserver {
   ~DebounceDownloadService() override;
 
   std::vector<std::unique_ptr<DebounceRule>>* rules();
-  scoped_refptr<base::SequencedTaskRunner> GetTaskRunner();
+  base::flat_set<std::string>* host_cache();
+  base::flat_set<std::string>* param_cache();
 
   // implementation of LocalDataFilesObserver
   void OnComponentReady(const std::string& component_id,
@@ -96,16 +99,13 @@ class DebounceDownloadService : public LocalDataFilesObserver {
 
   base::ObserverList<Observer> observers_;
   std::vector<std::unique_ptr<DebounceRule>> rules_;
+  base::flat_set<std::string> host_cache_;
+  base::flat_set<std::string> param_cache_;
   base::FilePath resource_dir_;
 
-  SEQUENCE_CHECKER(sequence_checker_);
   base::WeakPtrFactory<DebounceDownloadService> weak_factory_;
   DISALLOW_COPY_AND_ASSIGN(DebounceDownloadService);
-};  // namespace debounce
-
-// Creates the DebounceDownloadService
-std::unique_ptr<DebounceDownloadService> DebounceDownloadServiceFactory(
-    LocalDataFilesService* local_data_files_service);
+};
 
 }  // namespace debounce
 

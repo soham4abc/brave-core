@@ -8,8 +8,10 @@
 #include <memory>
 #include <vector>
 
+#include "base/containers/flat_set.h"
 #include "base/logging.h"
 #include "brave/components/debounce/browser/debounce_download_service.h"
+#include "net/base/url_util.h"
 
 namespace debounce {
 
@@ -23,6 +25,23 @@ bool DebounceServiceImpl::Debounce(
     const GURL& original_url,
     const net::SiteForCookies& original_site_for_cookies,
     GURL* final_url) {
+  // Check host cache to see if this URL needs to have any debounce rules
+  // applied.
+  base::flat_set<std::string>* host_cache = download_service_->host_cache();
+  bool apply_rules =
+      (host_cache->find(original_url.host()) == host_cache->end());
+  if (!apply_rules) {
+    // We didn't find the host in the host cache. Now check the parameters
+    // against the parameter cache.
+    base::flat_set<std::string>* param_cache = download_service_->param_cache();
+    for (net::QueryIterator it(original_url); !it.IsAtEnd() && !apply_rules;
+         it.Advance()) {
+      apply_rules = param_cache->find(it.GetKey()) != param_cache->end();
+    }
+  }
+  if (!apply_rules)
+    return false;
+
   bool changed = false;
   GURL current_url = original_url;
   net::SiteForCookies current_site_for_cookies = original_site_for_cookies;

@@ -13,7 +13,6 @@
 
 #include "brave/components/brave_ads/browser/buildflags/buildflags.h"
 #include "brave/components/brave_referrals/buildflags/buildflags.h"
-#include "brave/components/debounce/browser/buildflags/buildflags.h"
 #include "brave/components/greaselion/browser/buildflags/buildflags.h"
 #include "brave/components/ipfs/buildflags/buildflags.h"
 #include "brave/components/speedreader/buildflags.h"
@@ -50,9 +49,7 @@ class GreaselionDownloadService;
 }  // namespace greaselion
 
 namespace debounce {
-#if BUILDFLAG(ENABLE_DEBOUNCE)
 class DebounceDownloadService;
-#endif
 }  // namespace debounce
 
 namespace ntp_background_images {
@@ -93,9 +90,7 @@ class BraveBrowserProcess {
   virtual greaselion::GreaselionDownloadService*
   greaselion_download_service() = 0;
 #endif
-#if BUILDFLAG(ENABLE_DEBOUNCE)
   virtual debounce::DebounceDownloadService* debounce_download_service() = 0;
-#endif
   virtual brave_shields::HTTPSEverywhereService* https_everywhere_service() = 0;
   virtual brave_component_updater::LocalDataFilesService*
   local_data_files_service() = 0;

@@ -153,9 +153,34 @@ class DebounceBrowserTest : public BaseLocalDataFilesBrowserTest {
   GURL simple_landing_url_;
 };
 
-IN_PROC_BROWSER_TEST_F(DebounceBrowserTest, QueryStringFilterShieldsDown) {
-  ASSERT_TRUE(InstallMockExtension());
+IN_PROC_BROWSER_TEST_F(DebounceBrowserTest,
+                       QueryStringFilterCrossSite) {
+  const std::string inputs[] = {
+      "", "foo=bar", "fbclid=1", "fbclid=2&key=value", "key=value&fbclid=3",
+  };
+  const std::string outputs[] = {
+      // URLs without trackers should be untouched.
+      "",
+      "foo=bar",
+      // URLs with trackers should have those removed.
+      "",
+      "key=value",
+      "key=value",
+  };
 
+  constexpr size_t input_count = base::size(inputs);
+  static_assert(input_count == base::size(outputs),
+                "Inputs and outputs must have the same number of elements.");
+
+  for (size_t i = 0; i < input_count; i++) {
+    NavigateToURLAndWaitForRedirects(
+        url(landing_url(inputs[i], simple_landing_url()), cross_site_url()),
+        landing_url(outputs[i], simple_landing_url()));
+  }
+}
+
+IN_PROC_BROWSER_TEST_F(DebounceBrowserTest,
+                       QueryStringFilterShieldsDown) {
   const std::string inputs[] = {
       "", "foo=bar", "fbclid=1", "fbclid=2&key=value", "key=value&fbclid=3",
   };
@@ -169,9 +194,72 @@ IN_PROC_BROWSER_TEST_F(DebounceBrowserTest, QueryStringFilterShieldsDown) {
   }
 }
 
-IN_PROC_BROWSER_TEST_F(DebounceBrowserTest, QueryStringFilterDirectNavigation) {
-  ASSERT_TRUE(InstallMockExtension());
+IN_PROC_BROWSER_TEST_F(DebounceBrowserTest,
+                       QueryStringFilterSameSite) {
+  const std::string inputs[] = {
+      "fbclid=1",
+      "fbclid=2&key=value",
+      "key=value&fbclid=3",
+  };
+  // Same-site requests should be untouched.
 
+  constexpr size_t input_count = sizeof(inputs) / sizeof(std::string);
+
+  for (size_t i = 0; i < input_count; i++) {
+    NavigateToURLAndWaitForRedirects(
+        url(landing_url(inputs[i], simple_landing_url()), same_site_url()),
+        landing_url(inputs[i], simple_landing_url()));
+  }
+}
+
+IN_PROC_BROWSER_TEST_F(DebounceBrowserTest,
+                       QueryStringFilterCrossSiteRedirect) {
+  const std::string inputs[] = {
+      "",
+      "fbclid=1",
+  };
+  const std::string outputs[] = {
+      // URLs without trackers should be untouched.
+      "",
+      // URLs with trackers should have those removed.
+      "",
+  };
+
+  constexpr size_t input_count = sizeof(inputs) / sizeof(std::string);
+  static_assert(input_count == sizeof(outputs) / sizeof(std::string),
+                "Inputs and outputs must have the same number of elements.");
+
+  for (size_t i = 0; i < input_count; i++) {
+    // Same-site navigations to a cross-site redirect go through the query
+    // filter.
+    NavigateToURLAndWaitForRedirects(
+        url(landing_url(inputs[i], redirect_to_cross_site_landing_url()),
+            same_site_url()),
+        landing_url(outputs[i], simple_landing_url()));
+  }
+}
+
+IN_PROC_BROWSER_TEST_F(DebounceBrowserTest,
+                       QueryStringFilterSameSiteRedirect) {
+  const std::string inputs[] = {
+      "",
+      "fbclid=1",
+  };
+
+  constexpr size_t input_count = sizeof(inputs) / sizeof(std::string);
+
+  for (size_t i = 0; i < input_count; i++) {
+    // Same-site navigations to a same-site redirect are exempted from the query
+    // filter.
+    NavigateToURLAndWaitForRedirects(
+        url(landing_url(inputs[i], redirect_to_same_site_landing_url()),
+            same_site_url()),
+        landing_url(inputs[i], simple_landing_url()));
+  }
+}
+
+IN_PROC_BROWSER_TEST_F(DebounceBrowserTest,
+                       QueryStringFilterDirectNavigation) {
   const std::string inputs[] = {
       "",
       "abc=1",

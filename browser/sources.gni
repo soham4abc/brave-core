@@ -123,7 +123,6 @@ brave_chrome_browser_deps = [
   "//brave/components/cosmetic_filters/browser",
   "//brave/components/cosmetic_filters/common:mojom",
   "//brave/components/crypto_dot_com/browser/buildflags",
-  "//brave/components/debounce/browser/buildflags",
   "//brave/components/decentralized_dns/buildflags",
   "//brave/components/gemini/browser/buildflags",
   "//brave/components/greaselion/browser/buildflags",

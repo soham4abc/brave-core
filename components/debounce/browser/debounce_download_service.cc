@@ -15,9 +15,7 @@
 #include "base/json/json_reader.h"
 #include "base/logging.h"
 #include "base/macros.h"
-#include "base/task/post_task.h"
-#include "base/task_runner_util.h"
-#include "base/threading/sequenced_task_runner_handle.h"
+#include "base/task/thread_pool.h"
 #include "brave/components/brave_component_updater/browser/dat_file_util.h"
 #include "brave/components/brave_component_updater/browser/local_data_files_service.h"
 #include "net/base/escape.h"
@@ -95,7 +93,9 @@ void DebounceRule::clear() {
 void DebounceRule::Parse(base::ListValue* include_value,
                          base::ListValue* exclude_value,
                          const std::string& action,
-                         const std::string& param) {
+                         const std::string& param,
+                         std::vector<std::string>* hosts,
+                         std::vector<std::string>* params) {
   clear();
   std::string error;
 
@@ -118,6 +118,12 @@ void DebounceRule::Parse(base::ListValue* include_value,
   else if (action == "remove")
     action_ = kDebounceRemoveParam;
   param_ = param;
+  params->push_back(param_);
+  for (const URLPattern& pattern : include_pattern_set_) {
+    if (!pattern.host().empty()) {
+      hosts->push_back(pattern.host());
+    }
+  }
 }
 
 bool DebounceRule::Apply(const GURL& original_url,
@@ -156,7 +162,7 @@ bool DebounceRule::Apply(const GURL& original_url,
     }
 
     // Failsafe: ensure we got a valid URL out of the param.
-    if (!new_url.is_valid())
+    if (!new_url.is_valid() || !new_url.SchemeIsHTTPOrHTTPS())
       return false;
 
     // Failsafe: never redirect to the same site.
@@ -176,16 +182,14 @@ bool DebounceRule::Apply(const GURL& original_url,
 
 DebounceDownloadService::DebounceDownloadService(
     LocalDataFilesService* local_data_files_service)
-    : LocalDataFilesObserver(local_data_files_service), weak_factory_(this) {
-  DETACH_FROM_SEQUENCE(sequence_checker_);
-}
+    : LocalDataFilesObserver(local_data_files_service), weak_factory_(this) {}
 
 DebounceDownloadService::~DebounceDownloadService() {}
 
 void DebounceDownloadService::LoadDirectlyFromResourcePath() {
   base::FilePath dat_file_path = resource_dir_.AppendASCII(kDebounceConfigFile);
-  base::PostTaskAndReplyWithResult(
-      GetTaskRunner().get(), FROM_HERE,
+  base::ThreadPool::PostTaskAndReplyWithResult(
+      FROM_HERE, {base::MayBlock()},
       base::BindOnce(&brave_component_updater::GetDATFileAsString,
                      dat_file_path),
       base::BindOnce(&DebounceDownloadService::OnDATFileDataReady,
@@ -193,8 +197,9 @@ void DebounceDownloadService::LoadDirectlyFromResourcePath() {
 }
 
 void DebounceDownloadService::OnDATFileDataReady(std::string contents) {
-  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   rules_.clear();
+  host_cache_.clear();
+  param_cache_.clear();
   if (contents.empty()) {
     LOG(ERROR) << "Could not obtain debounce configuration";
     return;
@@ -206,6 +211,8 @@ void DebounceDownloadService::OnDATFileDataReady(std::string contents) {
   }
   base::ListValue* root_list = nullptr;
   root->GetAsList(&root_list);
+  std::vector<std::string> hosts;
+  std::vector<std::string> params;
   for (base::Value& rule_it : root_list->GetList()) {
     base::DictionaryValue* rule_dict = nullptr;
     rule_it.GetAsDictionary(&rule_dict);
@@ -217,11 +224,13 @@ void DebounceDownloadService::OnDATFileDataReady(std::string contents) {
     const std::string action_value = action_ptr ? *action_ptr : "";
     const std::string* param_ptr = rule_it.FindStringPath(kParam);
     const std::string param_value = param_ptr ? *param_ptr : "";
-
     std::unique_ptr<DebounceRule> rule = std::make_unique<DebounceRule>();
-    rule->Parse(include_value, exclude_value, action_value, param_value);
+    rule->Parse(include_value, exclude_value, action_value, param_value, &hosts,
+                &params);
     rules_.push_back(std::move(rule));
   }
+  host_cache_ = std::move(hosts);
+  param_cache_ = std::move(params);
   for (Observer& observer : observers_)
     observer.OnRulesReady(this);
 }
@@ -235,21 +244,15 @@ void DebounceDownloadService::OnComponentReady(
 }
 
 std::vector<std::unique_ptr<DebounceRule>>* DebounceDownloadService::rules() {
-  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   return &rules_;
 }
 
-scoped_refptr<base::SequencedTaskRunner>
-DebounceDownloadService::GetTaskRunner() {
-  return local_data_files_service()->GetTaskRunner();
+base::flat_set<std::string>* DebounceDownloadService::host_cache() {
+  return &host_cache_;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-// The factory
-std::unique_ptr<DebounceDownloadService> DebounceDownloadServiceFactory(
-    LocalDataFilesService* local_data_files_service) {
-  return std::make_unique<DebounceDownloadService>(local_data_files_service);
+base::flat_set<std::string>* DebounceDownloadService::param_cache() {
+  return &param_cache_;
 }
 
 }  // namespace debounce
