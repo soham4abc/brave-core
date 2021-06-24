@@ -354,7 +354,8 @@ AdContentInfo::LikeAction AdsImpl::ToggleAdThumbUp(
   auto like_action = Client::Get()->ToggleAdThumbUp(creative_instance_id,
                                                     creative_set_id, action);
   if (like_action == AdContentInfo::LikeAction::kThumbsUp) {
-    account_->Deposit(creative_instance_id, AdType::kUndefined, ConfirmationType::kUpvoted);
+    account_->Deposit(creative_instance_id, AdType::kUndefined,
+                      ConfirmationType::kUpvoted);
   }
 
   return like_action;
@@ -367,7 +368,8 @@ AdContentInfo::LikeAction AdsImpl::ToggleAdThumbDown(
   auto like_action = Client::Get()->ToggleAdThumbDown(creative_instance_id,
                                                       creative_set_id, action);
   if (like_action == AdContentInfo::LikeAction::kThumbsDown) {
-    account_->Deposit(creative_instance_id, AdType::kUndefined, ConfirmationType::kDownvoted);
+    account_->Deposit(creative_instance_id, AdType::kUndefined,
+                      ConfirmationType::kDownvoted);
   }
 
   return like_action;
@@ -398,7 +400,8 @@ bool AdsImpl::ToggleFlagAd(const std::string& creative_instance_id,
   auto flag_ad = Client::Get()->ToggleFlagAd(creative_instance_id,
                                              creative_set_id, flagged);
   if (flag_ad) {
-    account_->Deposit(creative_instance_id, AdType::kUndefined, ConfirmationType::kFlagged);
+    account_->Deposit(creative_instance_id, AdType::kUndefined,
+                      ConfirmationType::kFlagged);
   }
 
   return flag_ad;
@@ -571,8 +574,7 @@ void AdsImpl::Start() {
 
   // Temporary change
   std::cerr << "DEPOSIT TIME START" << std::endl;
-  account_->Deposit("30ecd70f-f56d-4745-a457-4035fcab54b6",
-                    AdType::kUndefined,
+  account_->Deposit("30ecd70f-f56d-4745-a457-4035fcab54b6", AdType::kUndefined,
                     ConfirmationType::kViewed);
   std::cerr << "DEPOSIT TIME END" << std::endl;
 
@@ -635,20 +637,23 @@ void AdsImpl::OnCatalogUpdated(const Catalog& catalog) {
 }
 
 void AdsImpl::OnAdNotificationViewed(const AdNotificationInfo& ad) {
-  account_->Deposit(ad.creative_instance_id, ad.type, ConfirmationType::kViewed);
+  account_->Deposit(ad.creative_instance_id, ad.type,
+                    ConfirmationType::kViewed);
 }
 
 void AdsImpl::OnAdNotificationClicked(const AdNotificationInfo& ad) {
   ad_transfer_->set_last_clicked_ad(ad);
 
-  account_->Deposit(ad.creative_instance_id, ad.type, ConfirmationType::kClicked);
+  account_->Deposit(ad.creative_instance_id, ad.type,
+                    ConfirmationType::kClicked);
 
   epsilon_greedy_bandit_processor_->Process(
       {ad.segment, AdNotificationEventType::kClicked});
 }
 
 void AdsImpl::OnAdNotificationDismissed(const AdNotificationInfo& ad) {
-  account_->Deposit(ad.creative_instance_id, ad.type, ConfirmationType::kDismissed);
+  account_->Deposit(ad.creative_instance_id, ad.type,
+                    ConfirmationType::kDismissed);
 
   epsilon_greedy_bandit_processor_->Process(
       {ad.segment, AdNotificationEventType::kDismissed});
@@ -660,27 +665,32 @@ void AdsImpl::OnAdNotificationTimedOut(const AdNotificationInfo& ad) {
 }
 
 void AdsImpl::OnNewTabPageAdViewed(const NewTabPageAdInfo& ad) {
-  account_->Deposit(ad.creative_instance_id, ad.type, ConfirmationType::kViewed);
+  account_->Deposit(ad.creative_instance_id, ad.type,
+                    ConfirmationType::kViewed);
 }
 
 void AdsImpl::OnNewTabPageAdClicked(const NewTabPageAdInfo& ad) {
   ad_transfer_->set_last_clicked_ad(ad);
 
-  account_->Deposit(ad.creative_instance_id, ad.type, ConfirmationType::kClicked);
+  account_->Deposit(ad.creative_instance_id, ad.type,
+                    ConfirmationType::kClicked);
 }
 
 void AdsImpl::OnPromotedContentAdViewed(const PromotedContentAdInfo& ad) {
-  account_->Deposit(ad.creative_instance_id, ad.type, ConfirmationType::kViewed);
+  account_->Deposit(ad.creative_instance_id, ad.type,
+                    ConfirmationType::kViewed);
 }
 
 void AdsImpl::OnPromotedContentAdClicked(const PromotedContentAdInfo& ad) {
   ad_transfer_->set_last_clicked_ad(ad);
 
-  account_->Deposit(ad.creative_instance_id, ad.type, ConfirmationType::kClicked);
+  account_->Deposit(ad.creative_instance_id, ad.type,
+                    ConfirmationType::kClicked);
 }
 
 void AdsImpl::OnAdTransfer(const AdInfo& ad) {
-  account_->Deposit(ad.creative_instance_id, ad.type, ConfirmationType::kTransferred);
+  account_->Deposit(ad.creative_instance_id, ad.type,
+                    ConfirmationType::kTransferred);
 }
 
 void AdsImpl::OnConversion(

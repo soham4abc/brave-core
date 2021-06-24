@@ -3,11 +3,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "bat/ads/internal/tokens/get_issuers/get_issuers.h"
 #include "base/json/json_reader.h"
 #include "base/strings/stringprintf.h"
 #include "base/values.h"
 #include "bat/ads/internal/ads_client_helper.h"
-#include "bat/ads/internal/tokens/get_issuers/get_issuers.h"
 #include "bat/ads/internal/tokens/get_issuers/get_issuers_url_request_builder.h"
 #include "net/http/http_status_code.h"
 
@@ -44,9 +44,8 @@ void GetIssuers::RequestIssuers(const ConfirmationCallback& callback) {
   std::cerr << "REQ ISS 3" << std::endl;
 }
 
-void GetIssuers::OnRequestIssuers(
-    const UrlResponse& url_response,
-    const ConfirmationCallback& callback) {
+void GetIssuers::OnRequestIssuers(const UrlResponse& url_response,
+                                  const ConfirmationCallback& callback) {
   std::cerr << "REQ ISS 4" << std::endl;
   BLOG(1, "OnRequestIssuers");
 
@@ -59,16 +58,23 @@ void GetIssuers::OnRequestIssuers(
     BLOG(0, "Failed to get issuers");
     initialized_ = false;
     OnFailedToGetIssuers();
+    if (callback) {
+      callback();
+    }
     return;
   }
 
   std::cerr << "REQ ISS 5" << std::endl;
 
   bool parsed = ParseResponseBody(url_response);
+  std::cerr << "REQ ISS PARSED: " << parsed << std::endl;
   if (!parsed) {
     BLOG(3, "Failed to parse response: " << url_response.body);
     initialized_ = false;
     OnFailedToGetIssuers();
+    if (callback) {
+      callback();
+    }
     return;
   }
 
@@ -90,6 +96,10 @@ bool GetIssuers::ParseResponseBody(const UrlResponse& url_response) {
   base::Optional<base::Value> issuer_list =
       base::JSONReader::Read(url_response.body);
 
+  if (!issuer_list || !issuer_list->is_list()) {
+    return false;
+  }
+
   for (const auto& value : issuer_list->GetList()) {
     if (!value.is_dict()) {
       return false;
@@ -103,7 +113,8 @@ bool GetIssuers::ParseResponseBody(const UrlResponse& url_response) {
     }
 
     std::set<std::string> current_public_keys_;
-    const base::Value* public_key_list = public_key_dict->FindListKey("publicKeys");
+    const base::Value* public_key_list =
+        public_key_dict->FindListKey("publicKeys");
     for (const auto& public_key : public_key_list->GetList()) {
       if (!public_key.is_string()) {
         continue;
@@ -121,9 +132,8 @@ bool GetIssuers::IsInitialized() {
   return initialized_;
 }
 
-bool GetIssuers::FindPublicKey(
-    const std::string& issuer_name,
-    const std::string& public_key) {
+bool GetIssuers::FindPublicKey(const std::string& issuer_name,
+                               const std::string& public_key) {
   if (!IsInitialized()) {
     return false;
   }
@@ -132,6 +142,8 @@ bool GetIssuers::FindPublicKey(
   if (iter == issuer_name_to_public_keys_.end()) {
     return false;
   }
+
+  std::cerr << iter->second.count(public_key) << std::endl;
 
   return static_cast<bool>(iter->second.count(public_key));
 }

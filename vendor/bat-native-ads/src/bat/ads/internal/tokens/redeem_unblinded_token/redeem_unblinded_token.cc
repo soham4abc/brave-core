@@ -39,7 +39,8 @@ using challenge_bypass_ristretto::SignedToken;
 using challenge_bypass_ristretto::Token;
 using challenge_bypass_ristretto::UnblindedToken;
 
-RedeemUnblindedToken::RedeemUnblindedToken() : get_issuers_(std::make_unique<GetIssuers>()) {}
+RedeemUnblindedToken::RedeemUnblindedToken()
+    : get_issuers_(std::make_unique<GetIssuers>()) {}
 
 RedeemUnblindedToken::~RedeemUnblindedToken() = default;
 
@@ -73,7 +74,8 @@ void RedeemUnblindedToken::CreateConfirmation(
   BLOG(5, UrlRequestToString(url_request));
   BLOG(7, UrlRequestHeadersToString(url_request));
 
-  std::cerr << "[!] DEBUG CreateConfirmation: " << UrlRequestToString(url_request) << std::endl;
+  std::cerr << "[!] DEBUG CreateConfirmation: "
+            << UrlRequestToString(url_request) << std::endl;
 
   auto callback = std::bind(&RedeemUnblindedToken::OnCreateConfirmation, this,
                             std::placeholders::_1, confirmation);
@@ -90,7 +92,8 @@ void RedeemUnblindedToken::OnCreateConfirmation(
   BLOG(6, UrlResponseToString(url_response));
   BLOG(7, UrlResponseHeadersToString(url_response));
 
-  std::cerr << "[!] DEBUG OnCreateConfirmation: " << UrlResponseToString(url_response) << std::endl;
+  std::cerr << "[!] DEBUG OnCreateConfirmation: "
+            << UrlResponseToString(url_response) << std::endl;
 
   if (url_response.status_code == net::HTTP_BAD_REQUEST) {
     // OnFetchPaymentToken handles HTTP response status codes for duplicate/bad
@@ -105,12 +108,15 @@ void RedeemUnblindedToken::OnCreateConfirmation(
   RequestIssuers(new_confirmation);
 }
 
-void RedeemUnblindedToken::RequestIssuers(const ConfirmationInfo& confirmation) {
-  auto callback = std::bind(&RedeemUnblindedToken::OnRequestIssuers, this, confirmation);
+void RedeemUnblindedToken::RequestIssuers(
+    const ConfirmationInfo& confirmation) {
+  auto callback =
+      std::bind(&RedeemUnblindedToken::OnRequestIssuers, this, confirmation);
   get_issuers_->RequestIssuers(callback);
 }
 
-void RedeemUnblindedToken::OnRequestIssuers(const ConfirmationInfo& confirmation) {
+void RedeemUnblindedToken::OnRequestIssuers(
+    const ConfirmationInfo& confirmation) {
   if (!get_issuers_->IsInitialized()) {
     OnFailedToRedeemUnblindedToken(confirmation, /* should_retry */ true);
     return;
@@ -150,7 +156,8 @@ void RedeemUnblindedToken::OnFetchPaymentToken(
   BLOG(6, UrlResponseToString(url_response));
   BLOG(7, UrlResponseHeadersToString(url_response));
 
-  std::cerr << "[!] DEBUG OnFetchPaymentToken: " << UrlResponseToString(url_response) << std::endl;
+  std::cerr << "[!] DEBUG OnFetchPaymentToken: "
+            << UrlResponseToString(url_response) << std::endl;
 
   if (url_response.status_code == net::HTTP_NOT_FOUND) {
     BLOG(1, "Confirmation not found");
@@ -231,8 +238,7 @@ void RedeemUnblindedToken::OnFetchPaymentToken(
   }
 
   if (!get_issuers_->FindPublicKey("payments", *public_key_base64)) {
-    BLOG(0, "Response public key " << *public_key_base64
-                                   << " does not match"
+    BLOG(0, "Response public key " << *public_key_base64 << " does not match"
                                    << " any payments public key");
     OnFailedToRedeemUnblindedToken(confirmation, /* should_retry */ true);
     return;

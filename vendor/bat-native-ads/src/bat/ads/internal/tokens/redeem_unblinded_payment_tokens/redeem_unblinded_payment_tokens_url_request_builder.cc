@@ -104,13 +104,15 @@ RedeemUnblindedPaymentTokensUrlRequestBuilder::CreatePaymentRequestDTO(
     base::Value credential = CreateCredential(unblinded_token, payload);
     payment_credential.SetKey("credential", base::Value(std::move(credential)));
 
-    std::cerr << "[DEBUG] PUB_KEY " << unblinded_token.public_key.encode_base64() << std::endl;
-    std::cerr << "[DEBUG] AD_TYPE " << std::string(unblinded_token.ad_type) << std::endl;
-    std::cerr << "[DEBUG] CR_TYPE " << std::string(unblinded_token.confirmation_type) << std::endl;
+    std::cerr << "[DEBUG] PUB_KEY "
+              << unblinded_token.public_key.encode_base64() << std::endl;
+    std::cerr << "[DEBUG] AD_TYPE " << std::string(unblinded_token.ad_type)
+              << std::endl;
+    std::cerr << "[DEBUG] CR_TYPE "
+              << std::string(unblinded_token.confirmation_type) << std::endl;
 
     payment_credential.SetKey(
-        "creative_type",
-        base::Value(std::string(unblinded_token.ad_type)));
+        "creative_type", base::Value(std::string(unblinded_token.ad_type)));
 
     payment_credential.SetKey(
         "confirmation_type",

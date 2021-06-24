@@ -33,10 +33,9 @@ class BatAdsGetIssuersTest : public UnitTestBase {
 
 TEST_F(BatAdsGetIssuersTest, SucceededToGetIssuers) {
   // Arrange
-  const URLEndpoints endpoints = {
-      { // Get issuers request
-        R"(/v1/issuers/)",
-        {{net::HTTP_OK, R"(
+  const URLEndpoints endpoints = {{// Get issuers request
+                                   R"(/v1/issuers/)",
+                                   {{net::HTTP_OK, R"(
         [
           {
             "name": "confirmations",
@@ -61,19 +60,14 @@ TEST_F(BatAdsGetIssuersTest, SucceededToGetIssuers) {
             ]
           }
         ]
-        )"}}}
-      };
+        )"}}}};
 
   MockUrlRequest(ads_client_mock_, endpoints);
 
   // Act
-  EXPECT_CALL(*get_issuers_delegate_mock_,
-              OnDidGetIssuers())
-      .Times(1);
+  EXPECT_CALL(*get_issuers_delegate_mock_, OnDidGetIssuers()).Times(1);
 
-  EXPECT_CALL(*get_issuers_delegate_mock_,
-              OnFailedToGetIssuers())
-      .Times(0);
+  EXPECT_CALL(*get_issuers_delegate_mock_, OnFailedToGetIssuers()).Times(0);
 
   get_issuers_->RequestIssuers(nullptr);
 

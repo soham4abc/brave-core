@@ -38,8 +38,9 @@ base::Value UnblindedTokens::GetTokensAsList() {
     dictionary.SetKey("public_key",
                       base::Value(unblinded_token.public_key.encode_base64()));
     if (unblinded_token.confirmation_type != ConfirmationType::kUndefined) {
-      dictionary.SetKey("confirmation_type",
-                        base::Value(std::string(unblinded_token.confirmation_type)));
+      dictionary.SetKey(
+          "confirmation_type",
+          base::Value(std::string(unblinded_token.confirmation_type)));
     }
     if (unblinded_token.ad_type != AdType::kUndefined) {
       dictionary.SetKey("ad_type",
@@ -92,7 +93,8 @@ void UnblindedTokens::SetTokensFromList(const base::Value& list) {
       public_key_base64 = *public_key;
 
       // Confirmation type
-      const std::string* confirmation_type = dictionary->FindStringKey("confirmation_type");
+      const std::string* confirmation_type =
+          dictionary->FindStringKey("confirmation_type");
       if (confirmation_type) {
         token_confirmation_type = ConfirmationType(*confirmation_type);
       }

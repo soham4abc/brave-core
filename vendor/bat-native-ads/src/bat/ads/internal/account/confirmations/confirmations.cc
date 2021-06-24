@@ -106,8 +106,9 @@ void Confirmations::ConfirmAd(const std::string& creative_instance_id,
       [=](const base::Value& user_data) {
         const base::DictionaryValue* user_data_dictionary = nullptr;
         user_data.GetAsDictionary(&user_data_dictionary);
-        const ConfirmationInfo confirmation = CreateConfirmation(
-            creative_instance_id, confirmation_type, ad_type, *user_data_dictionary);
+        const ConfirmationInfo confirmation =
+            CreateConfirmation(creative_instance_id, confirmation_type, ad_type,
+                               *user_data_dictionary);
         redeem_unblinded_token_->Redeem(confirmation);
       });
 
@@ -182,9 +183,9 @@ void Confirmations::CreateNewConfirmationAndAppendToRetryQueue(
         const base::DictionaryValue* user_data_dictionary = nullptr;
         user_data.GetAsDictionary(&user_data_dictionary);
 
-        const ConfirmationInfo new_confirmation =
-            CreateConfirmation(confirmation.creative_instance_id,
-                               confirmation.type, confirmation.ad_type, *user_data_dictionary);
+        const ConfirmationInfo new_confirmation = CreateConfirmation(
+            confirmation.creative_instance_id, confirmation.type,
+            confirmation.ad_type, *user_data_dictionary);
         AppendToRetryQueue(new_confirmation);
       });
 }

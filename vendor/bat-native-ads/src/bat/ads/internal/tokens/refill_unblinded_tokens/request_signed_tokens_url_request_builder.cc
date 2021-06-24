@@ -30,7 +30,7 @@ RequestSignedTokensUrlRequestBuilder::RequestSignedTokensUrlRequestBuilder(
   DCHECK(wallet_.IsValid());
   DCHECK(!blinded_tokens_.empty());
   std::cerr << "SIGNED TOKEN REQ" << std::endl;
-  for (const BlindedToken& token: blinded_tokens_) {
+  for (const BlindedToken& token : blinded_tokens_) {
     std::cerr << "BLINDED TOKEN: " << token.encode_base64() << std::endl;
   }
 }

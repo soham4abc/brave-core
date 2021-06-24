@@ -31,16 +31,14 @@ class GetIssuers {
 
   void RequestIssuers(const ConfirmationCallback& callback);
 
-  bool FindPublicKey(
-      const std::string& issuer_name,
-      const std::string& public_key);
+  bool FindPublicKey(const std::string& issuer_name,
+                     const std::string& public_key);
 
   bool IsInitialized();
 
  private:
-  void OnRequestIssuers(
-    const UrlResponse& url_response,
-    const ConfirmationCallback& callback);
+  void OnRequestIssuers(const UrlResponse& url_response,
+                        const ConfirmationCallback& callback);
 
   bool ParseResponseBody(const UrlResponse& url_response);
 

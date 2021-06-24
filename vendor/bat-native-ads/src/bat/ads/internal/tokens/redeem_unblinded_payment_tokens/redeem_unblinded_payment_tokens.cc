@@ -105,7 +105,8 @@ void RedeemUnblindedPaymentTokens::Redeem() {
   BLOG(5, UrlRequestToString(url_request));
   BLOG(7, UrlRequestHeadersToString(url_request));
 
-  std::cerr << "[!] DEBUG Redeem: " << UrlRequestToString(url_request) << std::endl;
+  std::cerr << "[!] DEBUG Redeem: " << UrlRequestToString(url_request)
+            << std::endl;
 
   auto callback = std::bind(&RedeemUnblindedPaymentTokens::OnRedeem, this,
                             std::placeholders::_1);
@@ -118,7 +119,8 @@ void RedeemUnblindedPaymentTokens::OnRedeem(const UrlResponse& url_response) {
   BLOG(6, UrlResponseToString(url_response));
   BLOG(7, UrlResponseHeadersToString(url_response));
 
-  std::cerr << "[!] DEBUG OnRedeem: " << UrlResponseToString(url_response) << std::endl;
+  std::cerr << "[!] DEBUG OnRedeem: " << UrlResponseToString(url_response)
+            << std::endl;
 
   if (url_response.status_code != net::HTTP_OK) {
     BLOG(1, "Failed to redeem unblinded payment tokens");

@@ -21,11 +21,9 @@
 
 namespace ads {
 
-GetIssuersUrlRequestBuilder::GetIssuersUrlRequestBuilder() =
-    default;
+GetIssuersUrlRequestBuilder::GetIssuersUrlRequestBuilder() = default;
 
-GetIssuersUrlRequestBuilder::~GetIssuersUrlRequestBuilder() =
-    default;
+GetIssuersUrlRequestBuilder::~GetIssuersUrlRequestBuilder() = default;
 
 // GET /v1/issuers/
 

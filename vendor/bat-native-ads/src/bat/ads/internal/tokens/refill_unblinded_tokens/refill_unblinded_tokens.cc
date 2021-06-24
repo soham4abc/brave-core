@@ -46,7 +46,8 @@ const int kMaximumUnblindedTokens = 50;
 
 RefillUnblindedTokens::RefillUnblindedTokens(
     privacy::TokenGeneratorInterface* token_generator)
-    : get_issuers_(std::make_unique<GetIssuers>()), token_generator_(token_generator) {
+    : get_issuers_(std::make_unique<GetIssuers>()),
+      token_generator_(token_generator) {
   DCHECK(token_generator_);
 }
 
@@ -85,7 +86,8 @@ void RefillUnblindedTokens::MaybeRefill(const WalletInfo& wallet) {
   // const CatalogIssuersInfo catalog_issuers =
   //     ConfirmationsState::Get()->get_catalog_issuers();
   // if (!catalog_issuers.IsValid()) {
-  //   BLOG(0, "Failed to refill unblinded tokens due to missing catalog issuers");
+  //   BLOG(0, "Failed to refill unblinded tokens due to missing catalog
+  //   issuers");
 
   //   if (delegate_) {
   //     delegate_->OnFailedToRefillUnblindedTokens();
@@ -108,7 +110,7 @@ void RefillUnblindedTokens::Refill() {
 
   nonce_ = "";
 
-  GetIssuers();
+  RequestIssuers();
 }
 
 void RefillUnblindedTokens::RequestIssuers() {
@@ -117,8 +119,10 @@ void RefillUnblindedTokens::RequestIssuers() {
 }
 
 void RefillUnblindedTokens::OnRequestIssuers() {
+  std::cerr << get_issuers_->IsInitialized() << std::endl;
   if (!get_issuers_->IsInitialized()) {
-    OnFailedToRefillUnblindedTokens(/* should_retry */ true);
+    std::cerr << "FAILED" << std::endl;
+    OnFailedToRefillUnblindedTokens(/* should_retry */ false);
     return;
   }
 
@@ -127,7 +131,8 @@ void RefillUnblindedTokens::OnRequestIssuers() {
 
 void RefillUnblindedTokens::RequestSignedTokens() {
   BLOG(1, "RequestSignedTokens");
-  BLOG(2, base::StringPrintf("POST %s{payment_id}", kRequestSignedTokensUrlPath));
+  BLOG(2,
+       base::StringPrintf("POST %s{payment_id}", kRequestSignedTokensUrlPath));
 
   const int count = CalculateAmountOfTokensToRefill();
   tokens_ = token_generator_->Generate(count);
@@ -140,7 +145,8 @@ void RefillUnblindedTokens::RequestSignedTokens() {
   BLOG(5, UrlRequestToString(url_request));
   BLOG(7, UrlRequestHeadersToString(url_request));
   std::cerr << "[!] DEBUG: " << UrlRequestToString(url_request) << std::endl;
-  std::cerr << "[!] DEBUG: " << UrlRequestHeadersToString(url_request) << std::endl;
+  std::cerr << "[!] DEBUG: " << UrlRequestHeadersToString(url_request)
+            << std::endl;
 
   auto callback = std::bind(&RefillUnblindedTokens::OnRequestSignedTokens, this,
                             std::placeholders::_1);
@@ -154,7 +160,8 @@ void RefillUnblindedTokens::OnRequestSignedTokens(
   BLOG(6, UrlResponseToString(url_response));
   BLOG(7, UrlResponseHeadersToString(url_response));
 
-  std::cerr << "[!] DEBUG OnRequestSignedTokens: " << UrlResponseToString(url_response) << std::endl;
+  std::cerr << "[!] DEBUG OnRequestSignedTokens: "
+            << UrlResponseToString(url_response) << std::endl;
 
   if (url_response.status_code != net::HTTP_CREATED) {
     BLOG(1, "Failed to request signed tokens");
@@ -186,7 +193,7 @@ void RefillUnblindedTokens::OnRequestSignedTokens(
 void RefillUnblindedTokens::GetSignedTokens() {
   BLOG(1, "GetSignedTokens");
   BLOG(2, base::StringPrintf("GET %s{payment_id}?nonce={nonce}",
-      kGetSignedTokensUrlPath));
+                             kGetSignedTokensUrlPath));
 
   GetSignedTokensUrlRequestBuilder url_request_builder(wallet_, nonce_);
   UrlRequestPtr url_request = url_request_builder.Build();
@@ -201,15 +208,19 @@ void RefillUnblindedTokens::GetSignedTokens() {
 void RefillUnblindedTokens::OnGetSignedTokens(const UrlResponse& url_response) {
   BLOG(1, "OnGetSignedTokens");
 
+  std::cerr << "IS PTR: " << get_issuers_.get() << std::endl;
+  std::cerr << "IS INIT: " << get_issuers_->IsInitialized() << std::endl;
+
   if (!get_issuers_->IsInitialized()) {
-    OnFailedToRefillUnblindedTokens(/* should_retry */ true);
+    OnFailedToRefillUnblindedTokens(/* should_retry */ false);
     return;
   }
 
   BLOG(6, UrlResponseToString(url_response));
   BLOG(7, UrlResponseHeadersToString(url_response));
 
-  std::cerr << "[!] DEBUG OnGetSignedTokens: " << UrlResponseToString(url_response) << std::endl;
+  std::cerr << "[!] DEBUG OnGetSignedTokens: "
+            << UrlResponseToString(url_response) << std::endl;
 
   if (url_response.status_code != net::HTTP_OK) {
     BLOG(0, "Failed to get signed tokens");
@@ -311,7 +322,9 @@ void RefillUnblindedTokens::OnGetSignedTokens(const UrlResponse& url_response) {
     privacy::UnblindedTokenInfo unblinded_token;
     unblinded_token.value = batch_dleq_proof_unblinded_token;
     unblinded_token.public_key = public_key;
-
+    // TODO: Check if these values must be defined
+    unblinded_token.confirmation_type = ConfirmationType::kUndefined;
+    unblinded_token.ad_type = AdType::kUndefined;
     unblinded_tokens.push_back(unblinded_token);
   }
 

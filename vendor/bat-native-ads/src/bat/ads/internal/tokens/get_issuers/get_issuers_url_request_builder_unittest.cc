@@ -36,8 +36,7 @@ TEST(BatAdsGetIssuersUrlRequestBuilderTest, BuildUrl) {
 
   // Assert
   UrlRequestPtr expected_url_request = UrlRequest::New();
-  expected_url_request->url =
-      R"(https://ads-serve.brave.software/v1/issuers/)";
+  expected_url_request->url = R"(https://ads-serve.brave.software/v1/issuers/)";
   expected_url_request->method = UrlRequestMethod::GET;
 
   EXPECT_EQ(expected_url_request, url_request);

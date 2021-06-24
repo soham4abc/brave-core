@@ -124,9 +124,9 @@ TEST_F(BatAdsRedeemUnblindedTokenTest, RedeemUnblindedToken) {
               }
             }
           )"}}},
-      { // Get issuers request
-        R"(/v1/issuers/)",
-        {{net::HTTP_OK, R"(
+      {// Get issuers request
+       R"(/v1/issuers/)",
+       {{net::HTTP_OK, R"(
         [
           {
             "name": "confirmations",
@@ -151,8 +151,7 @@ TEST_F(BatAdsRedeemUnblindedTokenTest, RedeemUnblindedToken) {
             ]
           }
         ]
-        )"}}}
-        };
+        )"}}}};
 
   MockUrlRequest(ads_client_mock_, endpoints);
 
@@ -197,7 +196,35 @@ TEST_F(BatAdsRedeemUnblindedTokenTest, RetryRedeemingUnblindedToken) {
                 ]
               }
             }
-          )"}}}};
+          )"}}},
+      {// Get issuers request
+       R"(/v1/issuers/)",
+       {{net::HTTP_OK, R"(
+        [
+          {
+            "name": "confirmations",
+            "publicKeys": [
+              "JsvJluEN35bJBgJWTdW/8dAgPrrTM1I1pXga+o7cllo="
+            ]
+          },
+          {
+            "name": "payments",
+            "publicKeys": [
+              "JiwFR2EU/Adf1lgox+xqOVPuc6a/rxdy/LguFG5eaXg=",
+              "XgxwreIbLMu0IIFVk4TKEce6RduNVXngDmU3uixly0M=",
+              "CrQLMWmUuYog6Q93nScS8Lo1HHSex8WM2Qxij7qhjkQ=",
+              "FnEJA85KqpxGaOkHiIzldRIUfaBe5etyUn2ThCpZKS0=",
+              "lLO5tErGoTK0askrALab6pKGAnBHqELSyw/evqZRwH8=",
+              "6DBiZUS47m8eb5ohI2MiRaERLzS4DQgMp4nxPLKAenA=",
+              "YOIEGq4joK7rtkWdcNdNNGT5xlU/KIrri4AX19qwZW4=",
+              "VihGXGoiQ5Fjxe4SrskIVMcmERa1LoAgvhFxxfLmNEI=",
+              "iJcG3AkH1sgl+5YCZuo+4Q/7aeBOnYyntkIUXeMbDCs=",
+              "aDD4SJmIj2xwdA6D00K1dopTg90oOFpwd2iiK8bqqlQ=",
+              "bPE1QE65mkIgytffeu7STOfly+x10BXCGuk5pVlOHQU="
+            ]
+          }
+        ]
+        )"}}}};
 
   MockUrlRequest(ads_client_mock_, endpoints);
 
@@ -232,7 +259,35 @@ TEST_F(
        {{net::HTTP_BAD_REQUEST, ""}}},
       {// Fetch payment token request
        R"(/v1/confirmation/9fd71bc4-1b8e-4c1e-8ddc-443193a09f91/paymentToken)",
-       {{net::HTTP_NOT_FOUND, ""}}}};
+       {{net::HTTP_NOT_FOUND, ""}}},
+      {// Get issuers request
+       R"(/v1/issuers/)",
+       {{net::HTTP_OK, R"(
+        [
+          {
+            "name": "confirmations",
+            "publicKeys": [
+              "JsvJluEN35bJBgJWTdW/8dAgPrrTM1I1pXga+o7cllo="
+            ]
+          },
+          {
+            "name": "payments",
+            "publicKeys": [
+              "JiwFR2EU/Adf1lgox+xqOVPuc6a/rxdy/LguFG5eaXg=",
+              "XgxwreIbLMu0IIFVk4TKEce6RduNVXngDmU3uixly0M=",
+              "CrQLMWmUuYog6Q93nScS8Lo1HHSex8WM2Qxij7qhjkQ=",
+              "FnEJA85KqpxGaOkHiIzldRIUfaBe5etyUn2ThCpZKS0=",
+              "lLO5tErGoTK0askrALab6pKGAnBHqELSyw/evqZRwH8=",
+              "6DBiZUS47m8eb5ohI2MiRaERLzS4DQgMp4nxPLKAenA=",
+              "YOIEGq4joK7rtkWdcNdNNGT5xlU/KIrri4AX19qwZW4=",
+              "VihGXGoiQ5Fjxe4SrskIVMcmERa1LoAgvhFxxfLmNEI=",
+              "iJcG3AkH1sgl+5YCZuo+4Q/7aeBOnYyntkIUXeMbDCs=",
+              "aDD4SJmIj2xwdA6D00K1dopTg90oOFpwd2iiK8bqqlQ=",
+              "bPE1QE65mkIgytffeu7STOfly+x10BXCGuk5pVlOHQU="
+            ]
+          }
+        ]
+        )"}}}};
 
   MockUrlRequest(ads_client_mock_, endpoints);
 
@@ -267,7 +322,35 @@ TEST_F(
        {{net::HTTP_OK, ""}}},
       {// Fetch payment token request
        R"(/v1/confirmation/9fd71bc4-1b8e-4c1e-8ddc-443193a09f91/paymentToken)",
-       {{net::HTTP_INTERNAL_SERVER_ERROR, ""}}}};
+       {{net::HTTP_INTERNAL_SERVER_ERROR, ""}}},
+      {// Get issuers request
+       R"(/v1/issuers/)",
+       {{net::HTTP_OK, R"(
+        [
+          {
+            "name": "confirmations",
+            "publicKeys": [
+              "JsvJluEN35bJBgJWTdW/8dAgPrrTM1I1pXga+o7cllo="
+            ]
+          },
+          {
+            "name": "payments",
+            "publicKeys": [
+              "JiwFR2EU/Adf1lgox+xqOVPuc6a/rxdy/LguFG5eaXg=",
+              "XgxwreIbLMu0IIFVk4TKEce6RduNVXngDmU3uixly0M=",
+              "CrQLMWmUuYog6Q93nScS8Lo1HHSex8WM2Qxij7qhjkQ=",
+              "FnEJA85KqpxGaOkHiIzldRIUfaBe5etyUn2ThCpZKS0=",
+              "lLO5tErGoTK0askrALab6pKGAnBHqELSyw/evqZRwH8=",
+              "6DBiZUS47m8eb5ohI2MiRaERLzS4DQgMp4nxPLKAenA=",
+              "YOIEGq4joK7rtkWdcNdNNGT5xlU/KIrri4AX19qwZW4=",
+              "VihGXGoiQ5Fjxe4SrskIVMcmERa1LoAgvhFxxfLmNEI=",
+              "iJcG3AkH1sgl+5YCZuo+4Q/7aeBOnYyntkIUXeMbDCs=",
+              "aDD4SJmIj2xwdA6D00K1dopTg90oOFpwd2iiK8bqqlQ=",
+              "bPE1QE65mkIgytffeu7STOfly+x10BXCGuk5pVlOHQU="
+            ]
+          }
+        ]
+        )"}}}};
 
   MockUrlRequest(ads_client_mock_, endpoints);
 

@@ -94,7 +94,8 @@ TEST(BatAdsRedeemUnblindedPaymentTokensRequestTest, BuildUrl) {
   expected_url_request->content_type = "application/json";
   expected_url_request->method = UrlRequestMethod::PUT;
 
-  std::cerr << UrlRequestToString(url_request) << " " << UrlRequestToString(expected_url_request) << std::endl;
+  std::cerr << UrlRequestToString(url_request) << " "
+            << UrlRequestToString(expected_url_request) << std::endl;
 
   EXPECT_TRUE(url_request.Equals(expected_url_request));
 }
