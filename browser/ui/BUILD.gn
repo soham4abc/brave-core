@@ -320,6 +320,7 @@ source_set("ui") {
     deps += [
       "//brave/browser/ui/sidebar",
       "//brave/components/sidebar",
+      "//brave/components/brave_vpn",
     ]
 
     sources += [

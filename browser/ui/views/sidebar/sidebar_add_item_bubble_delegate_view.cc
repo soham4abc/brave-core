@@ -31,6 +31,10 @@
 #include "ui/views/view_class_properties.h"
 #include "url/gurl.h"
 
+#include "base/strings/utf_string_conversions.h"
+#include "brave/components/brave_vpn/brave_vpn_connection_manager.h"
+#include "ui/views/controls/textfield/textfield.h"
+
 namespace {
 
 constexpr gfx::Size kAddItemBubbleEntrySize{242, 40};
@@ -114,6 +118,7 @@ SidebarAddItemBubbleDelegateView::SidebarAddItemBubbleDelegateView(
         BraveThemeProperties::COLOR_SIDEBAR_ADD_BUBBLE_BACKGROUND));
   }
   AddChildViews();
+  set_close_on_deactivate(false);
 }
 
 SidebarAddItemBubbleDelegateView::~SidebarAddItemBubbleDelegateView() = default;
@@ -173,6 +178,18 @@ void SidebarAddItemBubbleDelegateView::AddChildViews() {
         base::Unretained(this)));
   }
 
+  host_ = AddChildView(std::make_unique<views::Textfield>());
+  username_ = AddChildView(std::make_unique<views::Textfield>());
+  password_ = AddChildView(std::make_unique<views::Textfield>());
+  auto* connect_button = AddChildView(std::make_unique<views::LabelButton>());
+  host_->SetPlaceholderText(u"host");
+  username_->SetPlaceholderText(u"username");
+  password_->SetPlaceholderText(u"password");
+  connect_button->SetText(u"Connect");
+  connect_button->SetCallback(base::BindRepeating(
+      &SidebarAddItemBubbleDelegateView::OnConnect,
+      base::Unretained(this)));
+
   const auto not_added_default_items =
       GetSidebarService(browser_)->GetNotAddedDefaultSidebarItems();
   if (not_added_default_items.empty())
@@ -214,4 +231,14 @@ void SidebarAddItemBubbleDelegateView::OnCurrentItemButtonPressed() {
   AddChildViews();
   if (children().size() == 1)
     GetWidget()->CloseWithReason(views::Widget::ClosedReason::kUnspecified);
+}
+
+void SidebarAddItemBubbleDelegateView::OnConnect() {
+  auto* manager = brave_vpn::BraveVPNConnectionManager::GetInstance();
+  brave_vpn::BraveVPNConnectionInfo info;
+  info.connection_name = "Brave VPN";
+  info.hostname = base::UTF16ToUTF8(host_->GetText());
+  info.username = base::UTF16ToUTF8(username_->GetText());
+  info.password = base::UTF16ToUTF8(password_->GetText());
+  manager->Connect(info);
 }

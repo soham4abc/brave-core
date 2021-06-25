@@ -16,6 +16,10 @@ namespace sidebar {
 struct SidebarItem;
 }  // namespace sidebar
 
+namespace views {
+class Textfield;
+}
+
 // TODO(simonhong): Need to apply UI design spec. Currently, this just works.
 class SidebarAddItemBubbleDelegateView
     : public views::BubbleDialogDelegateView {
@@ -41,6 +45,12 @@ class SidebarAddItemBubbleDelegateView
   void OnCurrentItemButtonPressed();
 
   BraveBrowser* browser_ = nullptr;
+
+  // For VPN Test only. Delete before merging.
+  void OnConnect();
+  views::Textfield* host_;
+  views::Textfield* username_;
+  views::Textfield* password_;
 };
 
 #endif  // BRAVE_BROWSER_UI_VIEWS_SIDEBAR_SIDEBAR_ADD_ITEM_BUBBLE_DELEGATE_VIEW_H_
