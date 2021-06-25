@@ -38,9 +38,9 @@ class BraveVPNConnectionManager {
 
   virtual void CreateVPNConnection(const BraveVPNConnectionInfo& info) = 0;
   virtual void UpdateVPNConnection(const BraveVPNConnectionInfo& info) = 0;
-  virtual void Connect(const std::string& name) = 0;
-  virtual void Disconnect(const std::string& name) = 0;
-  virtual void RemoveVPNConnection(const std::string& name) = 0;
+  virtual void Connect(const BraveVPNConnectionInfo& info) = 0;
+  virtual void Disconnect(const BraveVPNConnectionInfo& info) = 0;
+  virtual void RemoveVPNConnection(const BraveVPNConnectionInfo& info) = 0;
 
  protected:
   BraveVPNConnectionManager();
