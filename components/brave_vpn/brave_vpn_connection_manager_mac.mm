@@ -13,26 +13,11 @@
 #include "base/mac/foundation_util.h"
 #include "base/strings/sys_string_conversions.h"
 
-// Referenced Guardian's framework source code.
+// Referenced GuardianConnect implementation.
 // https://github.com/GuardianFirewall/GuardianConnect
 namespace brave_vpn {
 
 namespace {
-
-// NSArray* GetVPNOnDemandRules(
-//     const std::string& hostname) {
-//   // RULE: connect to VPN automatically if server reports that it is running OK
-//   NEOnDemandRuleConnect* vpnServerConnectRule =
-//       [[NEOnDemandRuleConnect alloc] init];
-//   vpnServerConnectRule.interfaceTypeMatch = NEOnDemandRuleInterfaceTypeAny;
-//   vpnServerConnectRule.probeURL = [NSURL
-//       URLWithString:[NSString
-//                         stringWithFormat:@"https://%@/vpnsrv/api/server-status",
-//                                          base::SysUTF8ToNSString(hostname)]];
-
-//   NSArray* onDemandArr = @[ vpnServerConnectRule ];
-//   return onDemandArr;
-// }
 
 NEVPNProtocolIKEv2* CreateProtocolConfig(
     const BraveVPNConnectionInfo& info) {
@@ -56,12 +41,6 @@ NEVPNProtocolIKEv2* CreateProtocolConfig(
   protocol_config.deadPeerDetectionRate = NEVPNIKEv2DeadPeerDetectionRateLow; /* increase DPD tolerance from default 10min to 30min */
   protocol_config.useConfigurationAttributeInternalIPSubnet = false;
 
-  // TO DO - find out if this all works fine with Always On VPN (allegedly uses two open tunnels at once, for wifi/cellular interfaces)
-  // - may require settings "uniqueids" in VPN-side of config to "never" otherwise same EAP creds on both tunnels may cause an issue
-  /*
-   Params for VPN: AES-256, SHA-384, ECDH over the curve P-384 (DH Group 20)
-   TLS for PKI: TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
-   */
   [[protocol_config IKESecurityAssociationParameters] setEncryptionAlgorithm:NEVPNIKEv2EncryptionAlgorithmAES256];
   [[protocol_config IKESecurityAssociationParameters] setIntegrityAlgorithm:NEVPNIKEv2IntegrityAlgorithmSHA384];
   [[protocol_config IKESecurityAssociationParameters] setDiffieHellmanGroup:NEVPNIKEv2DiffieHellmanGroup20];
@@ -95,22 +74,26 @@ void BraveVPNConnectionManagerMac::CreateVPNConnection(
 }
 
 void BraveVPNConnectionManagerMac::CreateAndConnectVPNConnection(bool connect) {
-  NEVPNManager* vpnManager = [NEVPNManager sharedManager];
-  [vpnManager loadFromPreferencesWithCompletionHandler:^(NSError* load_error) {
+  NEVPNManager* vpn_manager = [NEVPNManager sharedManager];
+  [vpn_manager loadFromPreferencesWithCompletionHandler:^(NSError* load_error) {
     if (load_error) {
       LOG(ERROR) << __func__ << "############## Load error";
       return;
     }
 
-    auto current_info = GetInstance()->GetCurrentVPNConnectionInfo();
-    vpnManager.enabled = YES;
-    vpnManager.protocolConfiguration = CreateProtocolConfig(current_info);
-    vpnManager.localizedDescription =
-        base::SysUTF8ToNSString(current_info.connection_name);
-    // vpnManager.onDemandEnabled = YES;
-    // vpnManager.onDemandRules = GetVPNOnDemandRules(current_info.hostname);
+    NEVPNStatus current_status = [[vpn_manager connection] status];
+    if (current_status == NEVPNStatusConnected) {
+      LOG(ERROR) << __func__ << "############## CreateAndConnectVPNConnection - already connected";
+      return;
+    }
 
-    [vpnManager saveToPreferencesWithCompletionHandler:^(NSError* saveErr) {
+    auto current_info = GetInstance()->GetCurrentVPNConnectionInfo();
+    vpn_manager.enabled = YES;
+    vpn_manager.protocolConfiguration = CreateProtocolConfig(current_info);
+    vpn_manager.localizedDescription =
+        base::SysUTF8ToNSString(current_info.connection_name);
+
+    [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* saveErr) {
       if (saveErr) {
         NSLog(@"[DEBUG] saveErr = %@", saveErr);
         return;
@@ -118,9 +101,9 @@ void BraveVPNConnectionManagerMac::CreateAndConnectVPNConnection(bool connect) {
         if (!connect)
           return;
 
-        [vpnManager loadFromPreferencesWithCompletionHandler:^(NSError* error) {
+        [vpn_manager loadFromPreferencesWithCompletionHandler:^(NSError* error) {
           NSError* vpnErr;
-          [[vpnManager connection] startVPNTunnelAndReturnError:&vpnErr];
+          [[vpn_manager connection] startVPNTunnelAndReturnError:&vpnErr];
           if (vpnErr != nil) {
             NSLog(@"[DEBUG] vpnErr from connection() = %@", vpnErr);
             return;
@@ -148,21 +131,28 @@ void BraveVPNConnectionManagerMac::Connect(const BraveVPNConnectionInfo& info) {
 void BraveVPNConnectionManagerMac::Disconnect(
     const BraveVPNConnectionInfo& info) {
   NEVPNManager* vpn_manager = [NEVPNManager sharedManager];
-
-  NEVPNStatus current_status = [[vpn_manager connection] status];
-  if (current_status != NEVPNStatusConnected) {
-    return;
-  }
-
-  [vpn_manager setEnabled:NO];
-  [vpn_manager setOnDemandEnabled:NO];
-  [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* saveErr) {
-    if (saveErr) {
-      NSLog(@"[DEBUG][disconnectVPN] error saving update for firewall config = "
-            @"%@",
-            saveErr);
+  [vpn_manager loadFromPreferencesWithCompletionHandler:^(NSError* load_error) {
+    if (load_error) {
+      LOG(ERROR) << __func__ << "############## Load error";
+      return;
     }
-    [[vpn_manager connection] stopVPNTunnel];
+
+    NEVPNStatus current_status = [[vpn_manager connection] status];
+    if (current_status != NEVPNStatusConnected) {
+      LOG(ERROR) << __func__ << "############## Disconnect - not connected";
+      return;
+    }
+
+    [vpn_manager setEnabled:NO];
+    [vpn_manager setOnDemandEnabled:NO];
+    [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* saveErr) {
+      if (saveErr) {
+        NSLog(@"[DEBUG][disconnectVPN] error saving update for firewall config = "
+              @"%@",
+              saveErr);
+      }
+      [[vpn_manager connection] stopVPNTunnel];
+    }];
   }];
 }
 
