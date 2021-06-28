@@ -182,12 +182,17 @@ void SidebarAddItemBubbleDelegateView::AddChildViews() {
   username_ = AddChildView(std::make_unique<views::Textfield>());
   password_ = AddChildView(std::make_unique<views::Textfield>());
   auto* connect_button = AddChildView(std::make_unique<views::LabelButton>());
+  auto* disconnect_button = AddChildView(std::make_unique<views::LabelButton>());
   host_->SetPlaceholderText(u"host");
   username_->SetPlaceholderText(u"username");
   password_->SetPlaceholderText(u"password");
   connect_button->SetText(u"Connect");
   connect_button->SetCallback(base::BindRepeating(
       &SidebarAddItemBubbleDelegateView::OnConnect,
+      base::Unretained(this)));
+  disconnect_button->SetText(u"Disconnect");
+  disconnect_button->SetCallback(base::BindRepeating(
+      &SidebarAddItemBubbleDelegateView::OnDisconnect,
       base::Unretained(this)));
 
   const auto not_added_default_items =
@@ -241,4 +246,10 @@ void SidebarAddItemBubbleDelegateView::OnConnect() {
   info.username = base::UTF16ToUTF8(username_->GetText());
   info.password = base::UTF16ToUTF8(password_->GetText());
   manager->Connect(info);
+}
+
+void SidebarAddItemBubbleDelegateView::OnDisconnect() {
+  auto* manager = brave_vpn::BraveVPNConnectionManager::GetInstance();
+  brave_vpn::BraveVPNConnectionInfo info;
+  manager->Disconnect(info);
 }

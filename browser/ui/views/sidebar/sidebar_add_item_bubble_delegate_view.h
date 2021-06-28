@@ -48,6 +48,7 @@ class SidebarAddItemBubbleDelegateView
 
   // For VPN Test only. Delete before merging.
   void OnConnect();
+  void OnDisconnect();
   views::Textfield* host_;
   views::Textfield* username_;
   views::Textfield* password_;

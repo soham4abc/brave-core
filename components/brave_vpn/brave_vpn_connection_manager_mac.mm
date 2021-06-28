@@ -19,20 +19,20 @@ namespace brave_vpn {
 
 namespace {
 
-NSArray* GetVPNOnDemandRules(
-    const std::string& hostname) {
-  // RULE: connect to VPN automatically if server reports that it is running OK
-  NEOnDemandRuleConnect* vpnServerConnectRule =
-      [[NEOnDemandRuleConnect alloc] init];
-  vpnServerConnectRule.interfaceTypeMatch = NEOnDemandRuleInterfaceTypeAny;
-  vpnServerConnectRule.probeURL = [NSURL
-      URLWithString:[NSString
-                        stringWithFormat:@"https://%@/vpnsrv/api/server-status",
-                                         base::SysUTF8ToNSString(hostname)]];
+// NSArray* GetVPNOnDemandRules(
+//     const std::string& hostname) {
+//   // RULE: connect to VPN automatically if server reports that it is running OK
+//   NEOnDemandRuleConnect* vpnServerConnectRule =
+//       [[NEOnDemandRuleConnect alloc] init];
+//   vpnServerConnectRule.interfaceTypeMatch = NEOnDemandRuleInterfaceTypeAny;
+//   vpnServerConnectRule.probeURL = [NSURL
+//       URLWithString:[NSString
+//                         stringWithFormat:@"https://%@/vpnsrv/api/server-status",
+//                                          base::SysUTF8ToNSString(hostname)]];
 
-  NSArray* onDemandArr = @[ vpnServerConnectRule ];
-  return onDemandArr;
-}
+//   NSArray* onDemandArr = @[ vpnServerConnectRule ];
+//   return onDemandArr;
+// }
 
 NEVPNProtocolIKEv2* CreateProtocolConfig(
     const BraveVPNConnectionInfo& info) {
@@ -82,7 +82,6 @@ BraveVPNConnectionManager* BraveVPNConnectionManager::GetInstance() {
 }
 
 BraveVPNConnectionManagerMac::BraveVPNConnectionManagerMac() = default;
-
 BraveVPNConnectionManagerMac::~BraveVPNConnectionManagerMac() = default;
 
 BraveVPNConnectionInfo BraveVPNConnectionManagerMac::GetCurrentVPNConnectionInfo() const {
@@ -108,8 +107,8 @@ void BraveVPNConnectionManagerMac::CreateAndConnectVPNConnection(bool connect) {
     vpnManager.protocolConfiguration = CreateProtocolConfig(current_info);
     vpnManager.localizedDescription =
         base::SysUTF8ToNSString(current_info.connection_name);
-    vpnManager.onDemandEnabled = YES;
-    vpnManager.onDemandRules = GetVPNOnDemandRules(current_info.hostname);
+    // vpnManager.onDemandEnabled = YES;
+    // vpnManager.onDemandRules = GetVPNOnDemandRules(current_info.hostname);
 
     [vpnManager saveToPreferencesWithCompletionHandler:^(NSError* saveErr) {
       if (saveErr) {
