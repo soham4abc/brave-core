@@ -28,16 +28,16 @@ class BraveVPNConnectionManagerMac : public BraveVPNConnectionManager {
 
  private:
   // BraveVPNConnectionManager overrides:
+  BraveVPNConnectionInfo GetCurrentVPNConnectionInfo() const override;
   void CreateVPNConnection(const BraveVPNConnectionInfo& info) override;
   void UpdateVPNConnection(const BraveVPNConnectionInfo& info) override;
   void RemoveVPNConnection(const BraveVPNConnectionInfo& info) override;
   void Connect(const BraveVPNConnectionInfo& info) override;
   void Disconnect(const BraveVPNConnectionInfo& info) override;
 
-  NSArray* GetVPNOnDemandRules(const std::string& hostname);
-  NEVPNProtocolIKEv2* CreateProtocolConfig(const BraveVPNConnectionInfo& info);
-  void CreateAndConnectVPNConnection(const BraveVPNConnectionInfo& info,
-                                     bool connect);
+  void CreateAndConnectVPNConnection(bool connect);
+
+  BraveVPNConnectionInfo info_;
 };
 
 }  // namespace brave_vpn

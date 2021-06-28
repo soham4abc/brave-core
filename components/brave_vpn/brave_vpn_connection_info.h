@@ -18,6 +18,8 @@ struct BraveVPNConnectionInfo {
 
   BraveVPNConnectionInfo();
   ~BraveVPNConnectionInfo();
+
+  BraveVPNConnectionInfo(const BraveVPNConnectionInfo& info);
 };
 
 }  // namespace brave_vpn

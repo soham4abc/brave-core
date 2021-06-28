@@ -17,94 +17,9 @@
 // https://github.com/GuardianFirewall/GuardianConnect
 namespace brave_vpn {
 
-// static
-BraveVPNConnectionManager* BraveVPNConnectionManager::GetInstance() {
-  static base::NoDestructor<BraveVPNConnectionManagerMac> s_manager;
-  return s_manager.get();
-}
+namespace {
 
-BraveVPNConnectionManagerMac::BraveVPNConnectionManagerMac() = default;
-
-BraveVPNConnectionManagerMac::~BraveVPNConnectionManagerMac() = default;
-
-void BraveVPNConnectionManagerMac::CreateVPNConnection(
-    const BraveVPNConnectionInfo& info) {
-  CreateAndConnectVPNConnection(info, false);
-}
-
-void BraveVPNConnectionManagerMac::CreateAndConnectVPNConnection(
-    const BraveVPNConnectionInfo& info,
-    bool connect) {
-  NEVPNManager* vpnManager = [NEVPNManager sharedManager];
-  [vpnManager loadFromPreferencesWithCompletionHandler:^(NSError* load_error) {
-    if (load_error) {
-      LOG(ERROR) << __func__ << "############## Load error";
-      return;
-    }
-
-    vpnManager.enabled = YES;
-    vpnManager.protocolConfiguration = CreateProtocolConfig(info);
-    vpnManager.localizedDescription =
-        base::SysUTF8ToNSString(info.connection_name);
-    vpnManager.onDemandEnabled = YES;
-    vpnManager.onDemandRules = GetVPNOnDemandRules(info.hostname);
-
-    [vpnManager saveToPreferencesWithCompletionHandler:^(NSError* saveErr) {
-      if (saveErr) {
-        NSLog(@"[DEBUG] saveErr = %@", saveErr);
-        return;
-      } else {
-        if (!connect)
-          return;
-
-        [vpnManager loadFromPreferencesWithCompletionHandler:^(NSError* error) {
-          NSError* vpnErr;
-          [[vpnManager connection] startVPNTunnelAndReturnError:&vpnErr];
-          if (vpnErr != nil) {
-            NSLog(@"[DEBUG] vpnErr from connection() = %@", vpnErr);
-            return;
-          } else {
-            NSLog(@"[DEBUG] created successful VPN connection");
-            return;
-          }
-        }];
-      }
-    }];
-  }];
-}
-
-void BraveVPNConnectionManagerMac::UpdateVPNConnection(
-    const BraveVPNConnectionInfo& info) {}
-
-void BraveVPNConnectionManagerMac::RemoveVPNConnection(
-    const BraveVPNConnectionInfo& info) {}
-
-void BraveVPNConnectionManagerMac::Connect(const BraveVPNConnectionInfo& info) {
-  CreateAndConnectVPNConnection(info, true);
-}
-
-void BraveVPNConnectionManagerMac::Disconnect(
-    const BraveVPNConnectionInfo& info) {
-  NEVPNManager* vpn_manager = [NEVPNManager sharedManager];
-
-  NEVPNStatus current_status = [[vpn_manager connection] status];
-  if (current_status != NEVPNStatusConnected) {
-    return;
-  }
-
-  [vpn_manager setEnabled:NO];
-  [vpn_manager setOnDemandEnabled:NO];
-  [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* saveErr) {
-    if (saveErr) {
-      NSLog(@"[DEBUG][disconnectVPN] error saving update for firewall config = "
-            @"%@",
-            saveErr);
-    }
-    [[vpn_manager connection] stopVPNTunnel];
-  }];
-}
-
-NSArray* BraveVPNConnectionManagerMac::GetVPNOnDemandRules(
+NSArray* GetVPNOnDemandRules(
     const std::string& hostname) {
   // RULE: connect to VPN automatically if server reports that it is running OK
   NEOnDemandRuleConnect* vpnServerConnectRule =
@@ -119,7 +34,7 @@ NSArray* BraveVPNConnectionManagerMac::GetVPNOnDemandRules(
   return onDemandArr;
 }
 
-NEVPNProtocolIKEv2* BraveVPNConnectionManagerMac::CreateProtocolConfig(
+NEVPNProtocolIKEv2* CreateProtocolConfig(
     const BraveVPNConnectionInfo& info) {
   NSString *hostname = [NSString stringWithUTF8String: info.hostname.c_str()];
   NSString *username = [NSString stringWithUTF8String: info.username.c_str()];
@@ -156,6 +71,100 @@ NEVPNProtocolIKEv2* BraveVPNConnectionManagerMac::CreateProtocolConfig(
   [[protocol_config childSecurityAssociationParameters] setLifetimeMinutes:480]; // 8 hours
 
   return protocol_config;
+}
+
+}  // namespace
+
+// static
+BraveVPNConnectionManager* BraveVPNConnectionManager::GetInstance() {
+  static base::NoDestructor<BraveVPNConnectionManagerMac> s_manager;
+  return s_manager.get();
+}
+
+BraveVPNConnectionManagerMac::BraveVPNConnectionManagerMac() = default;
+
+BraveVPNConnectionManagerMac::~BraveVPNConnectionManagerMac() = default;
+
+BraveVPNConnectionInfo BraveVPNConnectionManagerMac::GetCurrentVPNConnectionInfo() const {
+  return info_;
+}
+
+void BraveVPNConnectionManagerMac::CreateVPNConnection(
+    const BraveVPNConnectionInfo& info) {
+  info_ = info;
+  CreateAndConnectVPNConnection(false);
+}
+
+void BraveVPNConnectionManagerMac::CreateAndConnectVPNConnection(bool connect) {
+  NEVPNManager* vpnManager = [NEVPNManager sharedManager];
+  [vpnManager loadFromPreferencesWithCompletionHandler:^(NSError* load_error) {
+    if (load_error) {
+      LOG(ERROR) << __func__ << "############## Load error";
+      return;
+    }
+
+    auto current_info = GetInstance()->GetCurrentVPNConnectionInfo();
+    vpnManager.enabled = YES;
+    vpnManager.protocolConfiguration = CreateProtocolConfig(current_info);
+    vpnManager.localizedDescription =
+        base::SysUTF8ToNSString(current_info.connection_name);
+    vpnManager.onDemandEnabled = YES;
+    vpnManager.onDemandRules = GetVPNOnDemandRules(current_info.hostname);
+
+    [vpnManager saveToPreferencesWithCompletionHandler:^(NSError* saveErr) {
+      if (saveErr) {
+        NSLog(@"[DEBUG] saveErr = %@", saveErr);
+        return;
+      } else {
+        if (!connect)
+          return;
+
+        [vpnManager loadFromPreferencesWithCompletionHandler:^(NSError* error) {
+          NSError* vpnErr;
+          [[vpnManager connection] startVPNTunnelAndReturnError:&vpnErr];
+          if (vpnErr != nil) {
+            NSLog(@"[DEBUG] vpnErr from connection() = %@", vpnErr);
+            return;
+          } else {
+            NSLog(@"[DEBUG] created successful VPN connection");
+            return;
+          }
+        }];
+      }
+    }];
+  }];
+}
+
+void BraveVPNConnectionManagerMac::UpdateVPNConnection(
+    const BraveVPNConnectionInfo& info) {}
+
+void BraveVPNConnectionManagerMac::RemoveVPNConnection(
+    const BraveVPNConnectionInfo& info) {}
+
+void BraveVPNConnectionManagerMac::Connect(const BraveVPNConnectionInfo& info) {
+  info_ = info;
+  CreateAndConnectVPNConnection(true);
+}
+
+void BraveVPNConnectionManagerMac::Disconnect(
+    const BraveVPNConnectionInfo& info) {
+  NEVPNManager* vpn_manager = [NEVPNManager sharedManager];
+
+  NEVPNStatus current_status = [[vpn_manager connection] status];
+  if (current_status != NEVPNStatusConnected) {
+    return;
+  }
+
+  [vpn_manager setEnabled:NO];
+  [vpn_manager setOnDemandEnabled:NO];
+  [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* saveErr) {
+    if (saveErr) {
+      NSLog(@"[DEBUG][disconnectVPN] error saving update for firewall config = "
+            @"%@",
+            saveErr);
+    }
+    [[vpn_manager connection] stopVPNTunnel];
+  }];
 }
 
 }  // namespace brave_vpn

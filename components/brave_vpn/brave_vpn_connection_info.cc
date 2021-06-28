@@ -10,4 +10,11 @@ namespace brave_vpn {
 BraveVPNConnectionInfo::BraveVPNConnectionInfo() = default;
 BraveVPNConnectionInfo::~BraveVPNConnectionInfo() = default;
 
+BraveVPNConnectionInfo::BraveVPNConnectionInfo(const BraveVPNConnectionInfo& info) {
+  connection_name = info.connection_name;
+  hostname = info.hostname;
+  username = info.username;
+  password = info.password;
+}
+
 }  // namespace brave_vpn
