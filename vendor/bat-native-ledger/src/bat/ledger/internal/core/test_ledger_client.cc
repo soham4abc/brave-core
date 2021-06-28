@@ -283,12 +283,12 @@ std::string TestLedgerClient::GetEncryptedStringState(const std::string& name) {
   return opt ? *opt : "";
 }
 
-base::Optional<std::string> TestLedgerClient::EncryptString(
+absl::optional<std::string> TestLedgerClient::EncryptString(
     const std::string& value) {
   return "shhhh:" + value;
 }
 
-base::Optional<std::string> TestLedgerClient::DecryptString(
+absl::optional<std::string> TestLedgerClient::DecryptString(
     const std::string& value) {
   return value.substr(6);
 }

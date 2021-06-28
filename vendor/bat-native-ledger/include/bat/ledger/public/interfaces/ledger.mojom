@@ -547,7 +547,13 @@ struct EventLog {
   uint64 created_at;
 };
 
+// TODO(zenparsing): Rename this to RewardsWallet
 struct BraveWallet {
   string payment_id;
   array<uint8> recovery_seed;
+};
+
+struct RewardsWallet {
+  string payment_id;
+  string recovery_seed;
 };

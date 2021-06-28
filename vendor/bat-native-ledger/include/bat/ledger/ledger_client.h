@@ -12,9 +12,9 @@
 #include <string>
 #include <map>
 
-#include "base/optional.h"
 #include "bat/ledger/mojom_structs.h"
 #include "bat/ledger/export.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace ledger {
 namespace client {
@@ -161,10 +161,10 @@ class LEDGER_EXPORT LedgerClient {
 
   virtual std::string GetEncryptedStringState(const std::string& name) = 0;
 
-  virtual base::Optional<std::string> EncryptString(
+  virtual absl::optional<std::string> EncryptString(
       const std::string& value) = 0;
 
-  virtual base::Optional<std::string> DecryptString(
+  virtual absl::optional<std::string> DecryptString(
       const std::string& value) = 0;
 };
 

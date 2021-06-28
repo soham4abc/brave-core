@@ -385,13 +385,13 @@ std::string BatLedgerClientMojoBridge::GetEncryptedStringState(
   return value;
 }
 
-base::Optional<std::string> BatLedgerClientMojoBridge::EncryptString(
+absl::optional<std::string> BatLedgerClientMojoBridge::EncryptString(
     const std::string& value) {
   // TODO(zenparsing)
   return value;
 }
 
-base::Optional<std::string> BatLedgerClientMojoBridge::DecryptString(
+absl::optional<std::string> BatLedgerClientMojoBridge::DecryptString(
     const std::string& value) {
   // TODO(zenparsing)
   return value;

@@ -3332,7 +3332,7 @@ std::string RewardsServiceImpl::GetEncryptedStringState(
   return value;
 }
 
-base::Optional<std::string> RewardsServiceImpl::EncryptString(
+absl::optional<std::string> RewardsServiceImpl::EncryptString(
     const std::string& value) {
   std::string encrypted;
   if (OSCrypt::EncryptString(value, &encrypted))
@@ -3341,7 +3341,7 @@ base::Optional<std::string> RewardsServiceImpl::EncryptString(
   return {};
 }
 
-base::Optional<std::string> RewardsServiceImpl::DecryptString(
+absl::optional<std::string> RewardsServiceImpl::DecryptString(
     const std::string& value) {
   std::string decrypted;
   if (OSCrypt::DecryptString(value, &decrypted))

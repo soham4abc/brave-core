@@ -16,8 +16,8 @@ struct WalletParseResult {
   std::string recovery_seed;
 };
 
-base::Optional<WalletParseResult> ParseWalletJSON(const std::string& data) {
-  base::Optional<base::Value> root = base::JSONReader::Read(data);
+absl::optional<WalletParseResult> ParseWalletJSON(const std::string& data) {
+  auto root = base::JSONReader::Read(data);
   if (!root || !root->is_dict())
     return {};
 
@@ -48,19 +48,17 @@ void StateMigrationV10::Migrate(ledger::ResultCallback callback) {
   std::string pref_data =
       ledger_->ledger_client()->GetStringState(kWalletBrave);
 
-  std::string encrypted;
-  if (!base::Base64Decode(pref_data, &encrypted)) {
-    // TODO(zenparsing): The data found in prefs is not base64
-  }
+  auto json = ledger_->context()
+      .Get<UserEncryption>()
+      .Base64DecryptString(pref_data);
 
-  auto decrypted = ledger_->ledger_client()->DecryptString(encrypted);
-  if (!decrypted) {
-    // TODO(zenparsing): Unable to decrypt this thing
+  if (!json) {
+    // Bad pref data
   }
 
   auto result = ParseWalletJSON(decrypted);
   if (!result) {
-    // TODO(zenparsing): Unable to JSON parse this thing
+    // Bad JSON
   }
 
   auto on_saved = [](ledger::ResultCallback callback) {
