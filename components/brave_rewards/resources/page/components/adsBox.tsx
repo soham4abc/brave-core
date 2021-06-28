@@ -321,13 +321,9 @@ class AdsBox extends React.Component<Props, State> {
       savedAd: adHistory.adContent.savedAd,
       flaggedAd: adHistory.adContent.flaggedAd,
       onThumbUpPress: () =>
-        this.onThumbUpPress(adHistory.adContent.creativeInstanceId,
-                            adHistory.adContent.creativeSetId,
-                            adHistory.adContent.likeAction),
+        this.onThumbUpPress(adHistory.adContent),
       onThumbDownPress: () =>
-        this.onThumbDownPress(adHistory.adContent.creativeInstanceId,
-                              adHistory.adContent.creativeSetId,
-                              adHistory.adContent.likeAction),
+        this.onThumbDownPress(adHistory.adContent),
       onMenuSave: () =>
         this.onMenuSave(adHistory.adContent.creativeInstanceId,
                         adHistory.adContent.creativeSetId,

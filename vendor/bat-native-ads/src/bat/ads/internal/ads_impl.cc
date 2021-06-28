@@ -348,13 +348,11 @@ void AdsImpl::GetAccountStatement(GetAccountStatementCallback callback) {
 }
 
 AdContentInfo::LikeAction AdsImpl::ToggleAdThumbUp(
-    const std::string& creative_instance_id,
-    const std::string& creative_set_id,
-    const AdContentInfo::LikeAction& action) {
-  auto like_action = Client::Get()->ToggleAdThumbUp(creative_instance_id,
-                                                    creative_set_id, action);
+    const AdContentInfo& ad_content) {
+  auto like_action = Client::Get()->ToggleAdThumbUp(ad_content.creative_instance_id,
+                                                    ad_content.creative_set_id, ad_content.like_action);
   if (like_action == AdContentInfo::LikeAction::kThumbsUp) {
-    account_->Deposit(creative_instance_id, AdType::kUndefined,
+    account_->Deposit(ad_content.creative_instance_id, ad_content.type,
                       ConfirmationType::kUpvoted);
   }
 
@@ -362,13 +360,11 @@ AdContentInfo::LikeAction AdsImpl::ToggleAdThumbUp(
 }
 
 AdContentInfo::LikeAction AdsImpl::ToggleAdThumbDown(
-    const std::string& creative_instance_id,
-    const std::string& creative_set_id,
-    const AdContentInfo::LikeAction& action) {
-  auto like_action = Client::Get()->ToggleAdThumbDown(creative_instance_id,
-                                                      creative_set_id, action);
+    const AdContentInfo& ad_content) {
+  auto like_action = Client::Get()->ToggleAdThumbDown(ad_content.creative_instance_id,
+                                                      ad_content.creative_set_id, ad_content.like_action);
   if (like_action == AdContentInfo::LikeAction::kThumbsDown) {
-    account_->Deposit(creative_instance_id, AdType::kUndefined,
+    account_->Deposit(ad_content.creative_instance_id, action.ad_type,
                       ConfirmationType::kDownvoted);
   }
 

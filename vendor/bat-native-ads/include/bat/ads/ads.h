@@ -198,16 +198,12 @@ class ADS_EXPORT Ads {
   // Should be called to indicate interest in the specified ad. This is a
   // toggle, so calling it again returns the setting to the neutral state
   virtual AdContentInfo::LikeAction ToggleAdThumbUp(
-      const std::string& creative_instance_id,
-      const std::string& creative_set_id,
-      const AdContentInfo::LikeAction& action) = 0;
+      const AdContentInfo& ad_content) = 0;
 
   // Should be called to indicate a lack of interest in the specified ad. This
   // is a toggle, so calling it again returns the setting to the neutral state
   virtual AdContentInfo::LikeAction ToggleAdThumbDown(
-      const std::string& creative_instance_id,
-      const std::string& creative_set_id,
-      const AdContentInfo::LikeAction& action) = 0;
+      const AdContentInfo& ad_content) = 0;
 
   // Should be called to opt-in to the specified ad category. This is a toggle,
   // so calling it again neutralizes the ad category. Returns |OptAction" with

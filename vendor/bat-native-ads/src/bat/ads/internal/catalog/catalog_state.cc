@@ -264,6 +264,7 @@ Result CatalogState::FromJson(const std::string& json,
     new_campaigns.push_back(campaign_info);
   }
 
+  // TODO(Pavel): Remove catalog issuers code
   // Issuers
   for (const auto& issuer : document["issuers"].GetArray()) {
     CatalogIssuerInfo catalog_issuer_info;
