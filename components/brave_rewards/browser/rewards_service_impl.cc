@@ -3332,6 +3332,24 @@ std::string RewardsServiceImpl::GetEncryptedStringState(
   return value;
 }
 
+base::Optional<std::string> RewardsServiceImpl::EncryptString(
+    const std::string& value) {
+  std::string encrypted;
+  if (OSCrypt::EncryptString(value, &encrypted))
+    return encrypted;
+
+  return {};
+}
+
+base::Optional<std::string> RewardsServiceImpl::DecryptString(
+    const std::string& value) {
+  std::string decrypted;
+  if (OSCrypt::DecryptString(value, &decrypted))
+    return decrypted;
+
+  return {};
+}
+
 void RewardsServiceImpl::GetBraveWallet(GetBraveWalletCallback callback) {
   if (!Connected()) {
     std::move(callback).Run(nullptr);

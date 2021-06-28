@@ -12,6 +12,7 @@
 #include <string>
 #include <map>
 
+#include "base/optional.h"
 #include "bat/ledger/mojom_structs.h"
 #include "bat/ledger/export.h"
 
@@ -153,11 +154,18 @@ class LEDGER_EXPORT LedgerClient {
 
   virtual void DeleteLog(client::ResultCallback callback) = 0;
 
+  // TODO(zenparsing): Remove these methods
   virtual bool SetEncryptedStringState(
       const std::string& name,
       const std::string& value) = 0;
 
   virtual std::string GetEncryptedStringState(const std::string& name) = 0;
+
+  virtual base::Optional<std::string> EncryptString(
+      const std::string& value) = 0;
+
+  virtual base::Optional<std::string> DecryptString(
+      const std::string& value) = 0;
 };
 
 }  // namespace ledger

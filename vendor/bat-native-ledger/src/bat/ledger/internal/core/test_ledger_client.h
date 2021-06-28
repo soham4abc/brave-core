@@ -149,6 +149,10 @@ class TestLedgerClient : public LedgerClient {
 
   std::string GetEncryptedStringState(const std::string& name) override;
 
+  base::Optional<std::string> EncryptString(const std::string& value) override;
+
+  base::Optional<std::string> DecryptString(const std::string& value) override;
+
   // Test environment setup methods:
 
   void SetOptionForTesting(const std::string& name, base::Value&& value);

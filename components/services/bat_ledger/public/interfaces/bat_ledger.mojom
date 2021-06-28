@@ -241,9 +241,16 @@ interface BatLedgerClient {
 
   DeleteLog() => (ledger.mojom.Result result);
 
+  // TODO(zenparsing): Remove these methods
   [Sync]
   SetEncryptedStringState(string name, string value) => (bool success);
 
   [Sync]
   GetEncryptedStringState(string name) => (string value);
+
+  [Sync]
+  EncryptString(string value) => (string? encrypted);
+
+  [Sync]
+  DecryptString(string value) => (string? decrypted);
 };

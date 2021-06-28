@@ -332,6 +332,10 @@ class RewardsServiceImpl : public RewardsService,
       const std::string& name,
       const std::string& value) override;
 
+  base::Optional<std::string> EncryptString(const std::string& value) override;
+
+  base::Optional<std::string> DecryptString(const std::string& value) override;
+
   void GetBraveWallet(GetBraveWalletCallback callback) override;
 
   void StartProcess(base::OnceClosure callback) override;

@@ -385,4 +385,16 @@ std::string BatLedgerClientMojoBridge::GetEncryptedStringState(
   return value;
 }
 
+base::Optional<std::string> BatLedgerClientMojoBridge::EncryptString(
+    const std::string& value) {
+  // TODO(zenparsing)
+  return value;
+}
+
+base::Optional<std::string> BatLedgerClientMojoBridge::DecryptString(
+    const std::string& value) {
+  // TODO(zenparsing)
+  return value;
+}
+
 }  // namespace bat_ledger

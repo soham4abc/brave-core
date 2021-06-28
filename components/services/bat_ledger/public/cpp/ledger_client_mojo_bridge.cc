@@ -389,4 +389,14 @@ void LedgerClientMojoBridge::GetEncryptedStringState(
   std::move(callback).Run(ledger_client_->GetEncryptedStringState(name));
 }
 
+void LedgerClientMojoBridge::EncryptString(const std::string& value,
+                                           EncryptStringCallback callback) {
+  std::move(callback).Run(ledger_client_->EncryptString(value));
+}
+
+void LedgerClientMojoBridge::DecryptString(const std::string& value,
+                                           DecryptStringCallback callback) {
+  std::move(callback).Run(ledger_client_->DecryptString(value));
+}
+
 }  // namespace bat_ledger

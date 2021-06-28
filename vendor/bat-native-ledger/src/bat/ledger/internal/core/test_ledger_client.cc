@@ -283,6 +283,16 @@ std::string TestLedgerClient::GetEncryptedStringState(const std::string& name) {
   return opt ? *opt : "";
 }
 
+base::Optional<std::string> TestLedgerClient::EncryptString(
+    const std::string& value) {
+  return "shhhh:" + value;
+}
+
+base::Optional<std::string> TestLedgerClient::DecryptString(
+    const std::string& value) {
+  return value.substr(6);
+}
+
 void TestLedgerClient::SetOptionForTesting(const std::string& name,
                                            base::Value&& value) {
   option_store_.SetPath(name, std::move(value));

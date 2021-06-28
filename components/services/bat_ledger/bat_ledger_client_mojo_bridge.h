@@ -124,6 +124,10 @@ class BatLedgerClientMojoBridge :
 
   std::string GetEncryptedStringState(const std::string& name) override;
 
+  base::Optional<std::string> EncryptString(const std::string& name) override;
+
+  base::Optional<std::string> DecryptString(const std::string& name) override;
+
  private:
   bool Connected() const;
 
