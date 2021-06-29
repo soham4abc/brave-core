@@ -6,9 +6,8 @@
 #ifndef BRAVE_VENDOR_BAT_NATIVE_LEDGER_SRC_BAT_LEDGER_INTERNAL_CORE_BAT_LEDGER_INITIALIZER_H_
 #define BRAVE_VENDOR_BAT_NATIVE_LEDGER_SRC_BAT_LEDGER_INTERNAL_CORE_BAT_LEDGER_INITIALIZER_H_
 
-#include "bat/ledger/internal/core/async_result.h"
-#include "bat/ledger/internal/core/async_result_cache.h"
 #include "bat/ledger/internal/core/bat_ledger_context.h"
+#include "bat/ledger/internal/core/future.h"
 
 namespace ledger {
 
@@ -18,16 +17,10 @@ class BATLedgerInitializer : public BATLedgerContext::Object {
  public:
   static const size_t kComponentKey;
 
-  BATLedgerInitializer();
-  ~BATLedgerInitializer() override;
-
   // Calls |Initialize| on all components that require one-time initialization
   // and returns a result indicating whether all components were successfully
-  // initialized. Subsequent calls return a cached result.
-  AsyncResult<bool> Initialize();
-
- private:
-  AsyncResultCache<bool> initialize_cache_;
+  // initialized.
+  Future<bool> Initialize();
 };
 
 }  // namespace ledger

@@ -5,6 +5,8 @@
 
 #include "bat/ledger/internal/rewards_wallet_store.h"
 
+#include <utility>
+
 #include "bat/ledger/internal/core/bat_ledger_job.h"
 #include "bat/ledger/internal/core/sql_store.h"
 #include "bat/ledger/internal/core/user_encryption.h"
@@ -17,7 +19,7 @@ struct ReadJob : public BATLedgerJob<mojom::RewardsWalletPtr> {
   void Start() {
     context()
         .Get<SQLStore>()
-        .Query("SELECT TOP 1 (payment_id, recovery_seed) FROM rewards_wallet")
+        .Query("SELECT payment_id, recovery_seed FROM rewards_wallet LIMIT 1")
         .Then(ContinueWith(&ReadJob::OnReadComplete));
   }
 
@@ -29,9 +31,8 @@ struct ReadJob : public BATLedgerJob<mojom::RewardsWalletPtr> {
 
     std::string payment_id = reader.ColumnString(0);
 
-    auto seed = context()
-        .Get<UserEncryption>()
-        .Base64DecryptString(reader.ColumnString(1));
+    auto seed = context().Get<UserEncryption>().Base64DecryptString(
+        reader.ColumnString(1));
 
     if (payment_id.empty() || !seed || (*seed).empty()) {
       return Complete(nullptr);
@@ -51,7 +52,8 @@ struct WriteJob : public BATLedgerJob<bool> {
         .Get<SQLStore>()
         .Execute(
             "INSERT INTO rewards_wallet (payment_id, recovery_seed) "
-            "VALUES (?, ?)", payment_id, encrypted_seed)
+            "VALUES (?, ?)",
+            payment_id, encrypted_seed)
         .Then(ContinueWith(&WriteJob::OnInsertComplete));
   }
 
@@ -70,30 +72,29 @@ const size_t RewardsWalletStore::kComponentKey =
 Future<bool> RewardsWalletStore::Initialize() {
   Future<bool>::Resolver resolver;
 
-  context().StartJob<ReadJob>().Then(callback_(
-    [this, resolver](mojom::RewardsWalletPtr wallet) mutable {
-      if (wallet) {
-        rewards_wallet_.payment_id = std::move(wallet->payment_id);
-        rewards_wallet_.recovery_seed = std::move(wallet->recovery_seed);
-      }
-      resolver.Complete(true);
-    }));
+  context().StartJob<ReadJob>().Then(
+      callback_([this, resolver](mojom::RewardsWalletPtr wallet) mutable {
+        if (wallet) {
+          rewards_wallet_.payment_id = std::move(wallet->payment_id);
+          rewards_wallet_.recovery_seed = std::move(wallet->recovery_seed);
+        }
+
+        resolver.Complete(true);
+      }));
 
   return resolver.future();
 }
 
-Future<bool> RewardsWalletStore::SaveNew(
-    const std::string& payment_id,
-    const std::string& recovery_seed) {
+Future<bool> RewardsWalletStore::SaveNew(const std::string& payment_id,
+                                         const std::string& recovery_seed) {
   Future<bool>::Resolver resolver;
   if (!rewards_wallet_.payment_id.empty()) {
     resolver.Complete(false);
     return resolver.future();
   }
 
-  auto encrypted_seed = context()
-      .Get<UserEncryption>()
-      .Base64EncryptString(recovery_seed);
+  auto encrypted_seed =
+      context().Get<UserEncryption>().Base64EncryptString(recovery_seed);
 
   if (!encrypted_seed) {
     resolver.Complete(false);

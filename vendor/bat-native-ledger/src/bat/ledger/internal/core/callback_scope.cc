@@ -9,6 +9,8 @@ namespace ledger {
 
 CallbackScope::CallbackScope() : valid_(std::make_shared<bool>(true)) {}
 
-CallbackScope::~CallbackScope() { *valid_ = false; }
+CallbackScope::~CallbackScope() {
+  *valid_ = false;
+}
 
 }  // namespace ledger

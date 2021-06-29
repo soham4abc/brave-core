@@ -8,51 +8,40 @@
 #include <utility>
 
 #include "bat/ledger/internal/core/bat_ledger_job.h"
+#include "bat/ledger/internal/rewards_wallet_store.h"
 
 namespace ledger {
 
 namespace {
 
 template <typename... Ts>
-class InitializeJob : public BATLedgerJob<bool> {
- public:
-  void Start() { StartNext<Ts...>(true); }
+struct InitializeJob : public BATLedgerJob<bool> {
+  void Start() { StartNext<Ts..., void>(true); }
 
- private:
   template <typename T, typename... Rest>
   void StartNext(bool success) {
-    if (!success) {
-      Complete(false);
-      return;
-    }
+    if (!success)
+      return Complete(false);
 
     context().template Get<T>().Initialize().Then(
         ContinueWith(&InitializeJob::StartNext<Rest...>));
   }
 
-  void StartNext(bool success) { Complete(success); }
+  template <>
+  void StartNext<void>(bool success) {
+    Complete(success);
+  }
 };
 
-class InitializeAllJob : public BATLedgerJob<bool> {
- public:
-  void Start() { Complete(true); }
-};
+using InitializeAllJob = InitializeJob<RewardsWalletStore>;
 
 }  // namespace
 
 const size_t BATLedgerInitializer::kComponentKey =
     BATLedgerContext::ReserveComponentKey();
 
-BATLedgerInitializer::BATLedgerInitializer() = default;
-BATLedgerInitializer::~BATLedgerInitializer() = default;
-
-AsyncResult<bool> BATLedgerInitializer::Initialize() {
-  return initialize_cache_.GetResult([this]() {
-    return context().StartJob<InitializeAllJob>().Then(
-        base::BindOnce([](bool success) {
-          return std::make_pair(success, base::TimeDelta::Max());
-        }));
-  });
+Future<bool> BATLedgerInitializer::Initialize() {
+  return context().StartJob<InitializeAllJob>();
 }
 
 }  // namespace ledger

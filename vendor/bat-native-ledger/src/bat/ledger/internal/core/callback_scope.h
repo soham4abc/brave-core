@@ -43,12 +43,12 @@ class CallbackScope {
   struct CallbackHelper;
 
   template <typename F, typename... Args>
-  struct CallbackHelper<F, void(F::*)(Args...)> {
+  struct CallbackHelper<F, void (F::*)(Args...)> {
     using Wrapper = CallbackWrapper<F, Args...>;
   };
 
   template <typename F, typename... Args>
-  struct CallbackHelper<F, void(F::*)(Args...) const> {
+  struct CallbackHelper<F, void (F::*)(Args...) const> {
     using Wrapper = CallbackWrapper<F, Args...>;
   };
 

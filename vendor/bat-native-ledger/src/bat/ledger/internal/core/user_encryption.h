@@ -24,7 +24,6 @@ class UserEncryption : public BATLedgerContext::Object {
       const std::string& plain_text);
 
   absl::optional<std::string> Base64DecryptString(const std::string& encrypted);
-
 };
 
 }  // namespace ledger

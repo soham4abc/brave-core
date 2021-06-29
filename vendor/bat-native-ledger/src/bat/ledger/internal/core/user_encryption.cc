@@ -6,6 +6,7 @@
 #include "bat/ledger/internal/core/user_encryption.h"
 
 #include "base/base64.h"
+#include "bat/ledger/internal/logging/logging.h"
 
 namespace ledger {
 

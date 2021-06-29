@@ -5,18 +5,23 @@
 
 #include "bat/ledger/internal/state/state_migration_v10.h"
 
+#include <string>
+#include <utility>
+
+#include "base/base64.h"
+#include "base/json/json_reader.h"
+#include "bat/ledger/internal/core/user_encryption.h"
+#include "bat/ledger/internal/ledger_impl.h"
+#include "bat/ledger/internal/rewards_wallet_store.h"
+#include "bat/ledger/internal/state/state_keys.h"
+
 namespace ledger {
 
 namespace state {
 
 namespace {
 
-struct WalletParseResult {
-  std::string payment_id;
-  std::string recovery_seed;
-};
-
-absl::optional<WalletParseResult> ParseWalletJSON(const std::string& data) {
+mojom::RewardsWalletPtr ParseWalletJSON(const std::string& data) {
   auto root = base::JSONReader::Read(data);
   if (!root || !root->is_dict())
     return {};
@@ -33,9 +38,10 @@ absl::optional<WalletParseResult> ParseWalletJSON(const std::string& data) {
   if (!base::Base64Decode(*seed, &decoded_seed))
     return {};
 
-  return WalletParseResult{
-      payment_id = *payment_id,
-      recovery_seed = std::move(decoded_seed)};
+  auto wallet = mojom::RewardsWallet::New();
+  wallet->payment_id = *payment_id;
+  wallet->recovery_seed = std::move(decoded_seed);
+  return wallet;
 }
 
 }  // namespace
@@ -48,27 +54,36 @@ void StateMigrationV10::Migrate(ledger::ResultCallback callback) {
   std::string pref_data =
       ledger_->ledger_client()->GetStringState(kWalletBrave);
 
-  auto json = ledger_->context()
-      .Get<UserEncryption>()
-      .Base64DecryptString(pref_data);
+  if (pref_data.empty()) {
+    callback(type::Result::LEDGER_OK);
+    return;
+  }
+
+  auto json =
+      ledger_->context().Get<UserEncryption>().Base64DecryptString(pref_data);
 
   if (!json) {
-    // Bad pref data
+    BLOG(0, "Rewards wallet data could not be decrypted from user preferences");
+    callback(type::Result::LEDGER_OK);
+    return;
   }
 
-  auto result = ParseWalletJSON(decrypted);
+  auto result = ParseWalletJSON(*json);
   if (!result) {
-    // Bad JSON
+    BLOG(0, "Rewards wallet could not be parsed from user preferences");
+    callback(type::Result::LEDGER_OK);
+    return;
   }
 
-  auto on_saved = [](ledger::ResultCallback callback) {
+  auto on_saved = [](ledger::ResultCallback callback, bool success) {
+    BLOG(0, "Error migrating Rewards wallet to database");
     callback(type::Result::LEDGER_OK);
   };
 
-  ledger_->context()->Get<RewardsWalletStore>()->SaveWalletInfo(
-      result->payment_id, result->recovery_seed).Then(base::BindOnce(on_saved));
-
-  callback(type::Result::LEDGER_OK);
+  ledger_->context()
+      .Get<RewardsWalletStore>()
+      .SaveNew(result->payment_id, result->recovery_seed)
+      .Then(base::BindOnce(on_saved, callback));
 }
 
 }  // namespace state
