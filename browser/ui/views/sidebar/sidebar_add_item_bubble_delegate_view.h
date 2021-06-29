@@ -47,8 +47,10 @@ class SidebarAddItemBubbleDelegateView
   BraveBrowser* browser_ = nullptr;
 
   // For VPN Test only. Delete before merging.
+  void OnCreate();
   void OnConnect();
   void OnDisconnect();
+  void OnRemove();
   views::Textfield* host_;
   views::Textfield* username_;
   views::Textfield* password_;

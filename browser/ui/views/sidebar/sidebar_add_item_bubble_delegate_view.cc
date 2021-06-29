@@ -181,19 +181,26 @@ void SidebarAddItemBubbleDelegateView::AddChildViews() {
   host_ = AddChildView(std::make_unique<views::Textfield>());
   username_ = AddChildView(std::make_unique<views::Textfield>());
   password_ = AddChildView(std::make_unique<views::Textfield>());
+  auto* create_button = AddChildView(std::make_unique<views::LabelButton>());
   auto* connect_button = AddChildView(std::make_unique<views::LabelButton>());
-  auto* disconnect_button = AddChildView(std::make_unique<views::LabelButton>());
+  auto* disconnect_button =
+      AddChildView(std::make_unique<views::LabelButton>());
+  auto* remove_button = AddChildView(std::make_unique<views::LabelButton>());
   host_->SetPlaceholderText(u"host");
   username_->SetPlaceholderText(u"username");
   password_->SetPlaceholderText(u"password");
+  create_button->SetText(u"Create");
+  create_button->SetCallback(base::BindRepeating(
+      &SidebarAddItemBubbleDelegateView::OnCreate, base::Unretained(this)));
   connect_button->SetText(u"Connect");
   connect_button->SetCallback(base::BindRepeating(
-      &SidebarAddItemBubbleDelegateView::OnConnect,
-      base::Unretained(this)));
+      &SidebarAddItemBubbleDelegateView::OnConnect, base::Unretained(this)));
   disconnect_button->SetText(u"Disconnect");
   disconnect_button->SetCallback(base::BindRepeating(
-      &SidebarAddItemBubbleDelegateView::OnDisconnect,
-      base::Unretained(this)));
+      &SidebarAddItemBubbleDelegateView::OnDisconnect, base::Unretained(this)));
+  remove_button->SetText(u"Remove");
+  remove_button->SetCallback(base::BindRepeating(
+      &SidebarAddItemBubbleDelegateView::OnRemove, base::Unretained(this)));
 
   const auto not_added_default_items =
       GetSidebarService(browser_)->GetNotAddedDefaultSidebarItems();
@@ -238,6 +245,16 @@ void SidebarAddItemBubbleDelegateView::OnCurrentItemButtonPressed() {
     GetWidget()->CloseWithReason(views::Widget::ClosedReason::kUnspecified);
 }
 
+void SidebarAddItemBubbleDelegateView::OnCreate() {
+  auto* manager = brave_vpn::BraveVPNConnectionManager::GetInstance();
+  brave_vpn::BraveVPNConnectionInfo info;
+  info.connection_name = "Brave VPN";
+  info.hostname = base::UTF16ToUTF8(host_->GetText());
+  info.username = base::UTF16ToUTF8(username_->GetText());
+  info.password = base::UTF16ToUTF8(password_->GetText());
+  manager->CreateVPNConnection(info);
+}
+
 void SidebarAddItemBubbleDelegateView::OnConnect() {
   auto* manager = brave_vpn::BraveVPNConnectionManager::GetInstance();
   brave_vpn::BraveVPNConnectionInfo info;
@@ -252,4 +269,10 @@ void SidebarAddItemBubbleDelegateView::OnDisconnect() {
   auto* manager = brave_vpn::BraveVPNConnectionManager::GetInstance();
   brave_vpn::BraveVPNConnectionInfo info;
   manager->Disconnect(info);
+}
+
+void SidebarAddItemBubbleDelegateView::OnRemove() {
+  auto* manager = brave_vpn::BraveVPNConnectionManager::GetInstance();
+  brave_vpn::BraveVPNConnectionInfo info;
+  manager->RemoveVPNConnection(info);
 }

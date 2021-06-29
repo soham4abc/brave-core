@@ -19,80 +19,75 @@ namespace brave_vpn {
 
 namespace {
 
-NSData* GetPasswordRefForAccount(NSString* accountKeyStr) {
-  NSString *bundleId = [[NSBundle mainBundle] bundleIdentifier];
-  CFTypeRef copyResult = NULL;
-  NSDictionary *query = @{
-      (__bridge id)kSecClass : (__bridge id)kSecClassGenericPassword,
-      (__bridge id)kSecAttrService : bundleId,
-      (__bridge id)kSecAttrAccount : accountKeyStr,
-      (__bridge id)kSecMatchLimit : (__bridge id)kSecMatchLimitOne,
-      (__bridge id)kSecReturnPersistentRef : (__bridge id)kCFBooleanTrue,
-  };
-  OSStatus results = SecItemCopyMatching((__bridge CFDictionaryRef)query, (CFTypeRef *)&copyResult);
-  if (results != errSecSuccess) {
-      NSLog(@"[GRDKeychain] error obtaining password ref: %ld", (long)results);
-  }
+const NSString* kBraveVPNKey = @"BraveVPNKey";
 
-  return (__bridge NSData *)copyResult;
+NSData* GetPasswordRefForAccount(const NSString* account_key) {
+  NSString* bundle_id = [[NSBundle mainBundle] bundleIdentifier];
+  CFTypeRef copy_result = NULL;
+  NSDictionary* query = @{
+    (__bridge id)kSecClass : (__bridge id)kSecClassGenericPassword,
+    (__bridge id)kSecAttrService : bundle_id,
+    (__bridge id)kSecAttrAccount : account_key,
+    (__bridge id)kSecMatchLimit : (__bridge id)kSecMatchLimitOne,
+    (__bridge id)kSecReturnPersistentRef : (__bridge id)kCFBooleanTrue,
+  };
+  OSStatus results = SecItemCopyMatching((__bridge CFDictionaryRef)query,
+                                         (CFTypeRef*)&copy_result);
+  if (results != errSecSuccess)
+    LOG(ERROR) << "Error: obtaining password ref(status:" << results << ")";
+  return (__bridge NSData*)copy_result;
 }
 
-OSStatus RemoveKeychanItemForAccount(NSString* accountKeyStr) {
-  NSString *bundleId = [[NSBundle mainBundle] bundleIdentifier];
-  NSDictionary *query = @{
-                          (__bridge id)kSecClass : (__bridge id)kSecClassGenericPassword,
-                          (__bridge id)kSecAttrService : bundleId,
-                          (__bridge id)kSecAttrAccount : accountKeyStr,
-                          (__bridge id)kSecReturnPersistentRef : (__bridge id)kCFBooleanTrue,
-                          };
+OSStatus RemoveKeychanItemForAccount(const NSString* account_key) {
+  NSString* bundle_id = [[NSBundle mainBundle] bundleIdentifier];
+  NSDictionary* query = @{
+    (__bridge id)kSecClass : (__bridge id)kSecClassGenericPassword,
+    (__bridge id)kSecAttrService : bundle_id,
+    (__bridge id)kSecAttrAccount : account_key,
+    (__bridge id)kSecReturnPersistentRef : (__bridge id)kCFBooleanTrue,
+  };
   OSStatus result = SecItemDelete((__bridge CFDictionaryRef)query);
-  if (result != errSecSuccess && result != errSecItemNotFound) {
-      if (@available(iOS 11.3, *)) {
-          NSString *errMessage = CFBridgingRelease(SecCopyErrorMessageString(result, nil));
-          NSLog(@"%@", errMessage);
-      }
-      NSLog(@"[GRDKeychain] error deleting password entry %@ with status: %ld", query, (long)result);
-  }
-
+  if (result != errSecSuccess && result != errSecItemNotFound)
+    LOG(ERROR) << "Error: deleting password entry(status:" << result << ")";
   return result;
 }
 
-OSStatus StorePassword(NSString* passwordStr, NSString* accountKeyStr) {
-  if (passwordStr == nil){
-      return errSecParam; //technically it IS a parameter issue, so this makes sense.
+OSStatus StorePassword(const NSString* password, const NSString* account_key) {
+  if (password == nil) {
+    LOG(ERROR) << "Error: password is empty";
+    return errSecParam;
   }
+
   CFTypeRef result = NULL;
-  NSString *bundleId = [[NSBundle mainBundle] bundleIdentifier];
-  NSData *valueData = [passwordStr dataUsingEncoding:NSUTF8StringEncoding];
-  NSDictionary *secItem = @{
-      (__bridge id)kSecClass : (__bridge id)kSecClassGenericPassword,
-      (__bridge id)kSecAttrService : bundleId,
+  NSString* bundle_id = [[NSBundle mainBundle] bundleIdentifier];
+  NSData* password_data = [password dataUsingEncoding:NSUTF8StringEncoding];
+  NSDictionary* sec_item = @{
+    (__bridge id)kSecClass : (__bridge id)kSecClassGenericPassword,
+    (__bridge id)kSecAttrService : bundle_id,
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-      (__bridge id)kSecAttrAccessible : (__bridge id)kSecAttrAccessibleAlways,
+    (__bridge id)kSecAttrAccessible : (__bridge id)kSecAttrAccessibleAlways,
 #pragma clang diagnostic pop
-      (__bridge id)kSecAttrSynchronizable : (__bridge id)kCFBooleanFalse,
-      (__bridge id)kSecAttrAccount : accountKeyStr,
-      (__bridge id)kSecValueData : valueData,
+    (__bridge id)kSecAttrSynchronizable : (__bridge id)kCFBooleanFalse,
+    (__bridge id)kSecAttrAccount : account_key,
+    (__bridge id)kSecValueData : password_data,
   };
-  OSStatus status = SecItemAdd((__bridge CFDictionaryRef)secItem, &result);
-  if (status == errSecSuccess) {
-      //NSLog(@"[GRDKeychain] successfully stored password %@ for %@", passwordStr, accountKeyStr);
-  } else {
-      if (status == errSecDuplicateItem){
-          NSLog(@"[GRDKeychain] duplicate item exists for %@ removing and re-adding.", accountKeyStr);
-          RemoveKeychanItemForAccount(accountKeyStr);
-          return StorePassword(passwordStr, accountKeyStr);
-      }
-      NSLog(@"[GRDKeychain] error storing password (%@): %ld", passwordStr, (long)status);
+  OSStatus status = SecItemAdd((__bridge CFDictionaryRef)sec_item, &result);
+  if (status != errSecSuccess) {
+    if (status == errSecDuplicateItem) {
+      VLOG(2) << "There is duplicates exists. removing and re-adding.";
+      RemoveKeychanItemForAccount(account_key);
+      return StorePassword(password, account_key);
+    }
+    LOG(ERROR) << "Error: storing password";
   }
+
   return status;
 }
 
-NEVPNProtocolIKEv2* CreateProtocolConfig(
-    const BraveVPNConnectionInfo& info) {
-  NSString *hostname = [NSString stringWithUTF8String: info.hostname.c_str()];
-  NSString *username = [NSString stringWithUTF8String: info.username.c_str()];
+NEVPNProtocolIKEv2* CreateProtocolConfig(const BraveVPNConnectionInfo& info) {
+  NSString* hostname = [NSString stringWithUTF8String:info.hostname.c_str()];
+  NSString* username = [NSString stringWithUTF8String:info.username.c_str()];
 
   NEVPNProtocolIKEv2* protocol_config = [[NEVPNProtocolIKEv2 alloc] init];
   protocol_config.serverAddress = hostname;
@@ -101,21 +96,32 @@ NEVPNProtocolIKEv2* CreateProtocolConfig(
   protocol_config.enablePFS = YES;
   protocol_config.disableMOBIKE = NO;
   protocol_config.disconnectOnSleep = NO;
-  protocol_config.authenticationMethod = NEVPNIKEAuthenticationMethodCertificate; // to validate the server-side cert issued by LetsEncrypt
+  protocol_config.authenticationMethod =
+      NEVPNIKEAuthenticationMethodCertificate;  // to validate the server-side
+                                                // cert issued by LetsEncrypt
   protocol_config.certificateType = NEVPNIKEv2CertificateTypeECDSA256;
   protocol_config.useExtendedAuthentication = YES;
   protocol_config.username = username;
-  protocol_config.passwordReference = GetPasswordRefForAccount(@"BraveVPNKey");
-  protocol_config.deadPeerDetectionRate = NEVPNIKEv2DeadPeerDetectionRateLow; /* increase DPD tolerance from default 10min to 30min */
+  protocol_config.passwordReference = GetPasswordRefForAccount(kBraveVPNKey);
+  protocol_config.deadPeerDetectionRate =
+      NEVPNIKEv2DeadPeerDetectionRateLow; /* increase DPD tolerance from default
+                                             10min to 30min */
   protocol_config.useConfigurationAttributeInternalIPSubnet = false;
 
-  [[protocol_config IKESecurityAssociationParameters] setEncryptionAlgorithm:NEVPNIKEv2EncryptionAlgorithmAES256];
-  [[protocol_config IKESecurityAssociationParameters] setIntegrityAlgorithm:NEVPNIKEv2IntegrityAlgorithmSHA384];
-  [[protocol_config IKESecurityAssociationParameters] setDiffieHellmanGroup:NEVPNIKEv2DiffieHellmanGroup20];
-  [[protocol_config IKESecurityAssociationParameters] setLifetimeMinutes:1440]; // 24 hours
-  [[protocol_config childSecurityAssociationParameters] setEncryptionAlgorithm:NEVPNIKEv2EncryptionAlgorithmAES256GCM];
-  [[protocol_config childSecurityAssociationParameters] setDiffieHellmanGroup:NEVPNIKEv2DiffieHellmanGroup20];
-  [[protocol_config childSecurityAssociationParameters] setLifetimeMinutes:480]; // 8 hours
+  [[protocol_config IKESecurityAssociationParameters]
+      setEncryptionAlgorithm:NEVPNIKEv2EncryptionAlgorithmAES256];
+  [[protocol_config IKESecurityAssociationParameters]
+      setIntegrityAlgorithm:NEVPNIKEv2IntegrityAlgorithmSHA384];
+  [[protocol_config IKESecurityAssociationParameters]
+      setDiffieHellmanGroup:NEVPNIKEv2DiffieHellmanGroup20];
+  [[protocol_config IKESecurityAssociationParameters]
+      setLifetimeMinutes:1440];  // 24 hours
+  [[protocol_config childSecurityAssociationParameters]
+      setEncryptionAlgorithm:NEVPNIKEv2EncryptionAlgorithmAES256GCM];
+  [[protocol_config childSecurityAssociationParameters]
+      setDiffieHellmanGroup:NEVPNIKEv2DiffieHellmanGroup20];
+  [[protocol_config childSecurityAssociationParameters]
+      setLifetimeMinutes:480];  // 8 hours
 
   return protocol_config;
 }
@@ -131,28 +137,33 @@ BraveVPNConnectionManager* BraveVPNConnectionManager::GetInstance() {
 BraveVPNConnectionManagerMac::BraveVPNConnectionManagerMac() = default;
 BraveVPNConnectionManagerMac::~BraveVPNConnectionManagerMac() = default;
 
-BraveVPNConnectionInfo BraveVPNConnectionManagerMac::GetCurrentVPNConnectionInfo() const {
+BraveVPNConnectionInfo
+BraveVPNConnectionManagerMac::GetCurrentVPNConnectionInfo() const {
   return info_;
 }
 
 void BraveVPNConnectionManagerMac::CreateVPNConnection(
     const BraveVPNConnectionInfo& info) {
-  info_ = info;
-  StorePassword([NSString stringWithUTF8String: info.password.c_str()], @"BraveVPNKey");
-  CreateAndConnectVPNConnection(false);
+  CreateAndConnectVPNConnection(false /*connect*/);
 }
 
 void BraveVPNConnectionManagerMac::CreateAndConnectVPNConnection(bool connect) {
+  if (StorePassword([NSString stringWithUTF8String:info_.password.c_str()],
+                    kBraveVPNKey) != errSecSuccess)
+    return;
+
   NEVPNManager* vpn_manager = [NEVPNManager sharedManager];
-  [vpn_manager loadFromPreferencesWithCompletionHandler:^(NSError* load_error) {
-    if (load_error) {
-      LOG(ERROR) << __func__ << "############## Load error";
+  [vpn_manager loadFromPreferencesWithCompletionHandler:^(NSError* error) {
+    if (error) {
+      LOG(ERROR) << "CreateAndConnectVPNConnection - loadFromPrefs error: "
+                 << base::SysNSStringToUTF8([error localizedDescription]);
       return;
     }
 
     NEVPNStatus current_status = [[vpn_manager connection] status];
+    // Early return if already connected.
     if (current_status == NEVPNStatusConnected) {
-      LOG(ERROR) << __func__ << "############## CreateAndConnectVPNConnection - already connected";
+      VLOG(2) << "CreateAndConnectVPNConnection - Already connected";
       return;
     }
 
@@ -162,24 +173,28 @@ void BraveVPNConnectionManagerMac::CreateAndConnectVPNConnection(bool connect) {
     vpn_manager.localizedDescription =
         base::SysUTF8ToNSString(current_info.connection_name);
 
-    [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* saveErr) {
-      if (saveErr) {
-        NSLog(@"[DEBUG] saveErr = %@", saveErr);
+    [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* error) {
+      if (error) {
+        LOG(ERROR) << "CreateAndConnectVPNConnection - saveToPrefs error: "
+                   << base::SysNSStringToUTF8([error localizedDescription]);
         return;
       } else {
+        VLOG(2) << "CreateAndConnectVPNConnection - saveToPrefs success";
+
         if (!connect)
           return;
 
-        [vpn_manager loadFromPreferencesWithCompletionHandler:^(NSError* error) {
-          NSError* vpnErr;
-          [[vpn_manager connection] startVPNTunnelAndReturnError:&vpnErr];
-          if (vpnErr != nil) {
-            NSLog(@"[DEBUG] vpnErr from connection() = %@", vpnErr);
-            return;
-          } else {
-            NSLog(@"[DEBUG] created successful VPN connection");
+        [vpn_manager loadFromPreferencesWithCompletionHandler:^(
+                         NSError* error) {
+          NSError* start_error;
+          [[vpn_manager connection] startVPNTunnelAndReturnError:&start_error];
+          if (start_error != nil) {
+            LOG(ERROR)
+                << "CreateAndConnectVPNConnection - startVPNTunnel error: "
+                << base::SysNSStringToUTF8([start_error localizedDescription]);
             return;
           }
+          VLOG(2) << "Successfully connected";
         }];
       }
     }];
@@ -190,40 +205,51 @@ void BraveVPNConnectionManagerMac::UpdateVPNConnection(
     const BraveVPNConnectionInfo& info) {}
 
 void BraveVPNConnectionManagerMac::RemoveVPNConnection(
-    const BraveVPNConnectionInfo& info) {}
+    const BraveVPNConnectionInfo& info) {
+  DisconnectAndDeleteCreds(true);
+}
 
 void BraveVPNConnectionManagerMac::Connect(const BraveVPNConnectionInfo& info) {
   info_ = info;
-  StorePassword([NSString stringWithUTF8String: info.hostname.c_str()], @"BraveVPNKey");
-  CreateAndConnectVPNConnection(true);
+  CreateAndConnectVPNConnection(true /* connect */);
 }
 
-void BraveVPNConnectionManagerMac::Disconnect(
-    const BraveVPNConnectionInfo& info) {
+void BraveVPNConnectionManagerMac::DisconnectAndDeleteCreds(bool delete_creds) {
   NEVPNManager* vpn_manager = [NEVPNManager sharedManager];
-  [vpn_manager loadFromPreferencesWithCompletionHandler:^(NSError* load_error) {
-    if (load_error) {
-      LOG(ERROR) << __func__ << "############## Load error";
+  [vpn_manager loadFromPreferencesWithCompletionHandler:^(NSError* error) {
+    if (error) {
+      LOG(ERROR) << "Disconnect: loadFromPrefs: "
+                 << base::SysNSStringToUTF8([error localizedDescription]);
       return;
     }
 
     NEVPNStatus current_status = [[vpn_manager connection] status];
     if (current_status != NEVPNStatusConnected) {
-      LOG(ERROR) << __func__ << "############## Disconnect - not connected";
+      VLOG(2) << "Disconnect: Not connected";
+
+      if (delete_creds)
+        RemoveKeychanItemForAccount(kBraveVPNKey);
+
       return;
     }
 
     [vpn_manager setEnabled:NO];
     [vpn_manager setOnDemandEnabled:NO];
-    [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* saveErr) {
-      if (saveErr) {
-        NSLog(@"[DEBUG][disconnectVPN] error saving update for firewall config = "
-              @"%@",
-              saveErr);
+    [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* error) {
+      if (error) {
+        LOG(ERROR) << "Disconnect: saveToPrefs: "
+                   << base::SysNSStringToUTF8([error localizedDescription]);
       }
       [[vpn_manager connection] stopVPNTunnel];
+      if (delete_creds)
+        RemoveKeychanItemForAccount(kBraveVPNKey);
     }];
   }];
+}
+
+void BraveVPNConnectionManagerMac::Disconnect(
+    const BraveVPNConnectionInfo& info) {
+  DisconnectAndDeleteCreds(false);
 }
 
 }  // namespace brave_vpn

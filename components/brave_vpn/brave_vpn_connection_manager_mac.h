@@ -6,8 +6,8 @@
 #ifndef BRAVE_COMPONENTS_BRAVE_VPN_BRAVE_VPN_CONNECTION_MANAGER_MAC_H_
 #define BRAVE_COMPONENTS_BRAVE_VPN_BRAVE_VPN_CONNECTION_MANAGER_MAC_H_
 
-#include <string>
 #import <NetworkExtension/NetworkExtension.h>
+#include <string>
 
 #include "base/no_destructor.h"
 #include "brave/components/brave_vpn/brave_vpn_connection_manager.h"
@@ -35,7 +35,11 @@ class BraveVPNConnectionManagerMac : public BraveVPNConnectionManager {
   void Connect(const BraveVPNConnectionInfo& info) override;
   void Disconnect(const BraveVPNConnectionInfo& info) override;
 
+  // Connect if true. Otherwise, only create connection entry.
   void CreateAndConnectVPNConnection(bool connect);
+  // Delete credentials from keychain after disconnecting. Otherwise, only
+  // disconnect.
+  void DisconnectAndDeleteCreds(bool delete_creds);
 
   BraveVPNConnectionInfo info_;
 };

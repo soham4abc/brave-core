@@ -319,8 +319,8 @@ source_set("ui") {
   if (enable_sidebar) {
     deps += [
       "//brave/browser/ui/sidebar",
-      "//brave/components/sidebar",
       "//brave/components/brave_vpn",
+      "//brave/components/sidebar",
     ]
 
     sources += [
