@@ -23,12 +23,11 @@ class BraveVPNConnectionManagerMac : public BraveVPNConnectionManager {
  protected:
   friend class base::NoDestructor<BraveVPNConnectionManagerMac>;
 
-  explicit BraveVPNConnectionManagerMac();
+  BraveVPNConnectionManagerMac();
   ~BraveVPNConnectionManagerMac() override;
 
  private:
   // BraveVPNConnectionManager overrides:
-  BraveVPNConnectionInfo GetCurrentVPNConnectionInfo() const override;
   void CreateVPNConnection(const BraveVPNConnectionInfo& info) override;
   void UpdateVPNConnection(const BraveVPNConnectionInfo& info) override;
   void RemoveVPNConnection(const BraveVPNConnectionInfo& info) override;
@@ -37,9 +36,6 @@ class BraveVPNConnectionManagerMac : public BraveVPNConnectionManager {
 
   // Connect if true. Otherwise, only create connection entry.
   void CreateAndConnectVPNConnection(bool connect);
-  // Delete credentials from keychain after disconnecting. Otherwise, only
-  // disconnect.
-  void DisconnectAndDeleteCreds(bool delete_creds);
 
   BraveVPNConnectionInfo info_;
 };

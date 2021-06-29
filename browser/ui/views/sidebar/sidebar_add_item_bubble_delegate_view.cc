@@ -31,7 +31,6 @@
 #include "ui/views/view_class_properties.h"
 #include "url/gurl.h"
 
-#include "base/strings/utf_string_conversions.h"
 #include "brave/components/brave_vpn/brave_vpn_connection_manager.h"
 #include "ui/views/controls/textfield/textfield.h"
 

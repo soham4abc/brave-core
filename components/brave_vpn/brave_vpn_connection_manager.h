@@ -36,7 +36,6 @@ class BraveVPNConnectionManager {
   void AddObserver(Observer* observer);
   void RemoveObserver(Observer* observer);
 
-  virtual BraveVPNConnectionInfo GetCurrentVPNConnectionInfo() const = 0;
   virtual void CreateVPNConnection(const BraveVPNConnectionInfo& info) = 0;
   virtual void UpdateVPNConnection(const BraveVPNConnectionInfo& info) = 0;
   virtual void Connect(const BraveVPNConnectionInfo& info) = 0;
