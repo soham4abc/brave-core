@@ -75,7 +75,7 @@ OSStatus StorePassword(const NSString* password, const NSString* account_key) {
   OSStatus status = SecItemAdd((__bridge CFDictionaryRef)sec_item, &result);
   if (status != errSecSuccess) {
     if (status == errSecDuplicateItem) {
-      VLOG(2) << "There is duplicates exists. removing and re-adding.";
+      VLOG(2) << "There is duplicated key in keychain. removing and re-adding.";
       RemoveKeychanItemForAccount(account_key);
       return StorePassword(password, account_key);
     }
@@ -163,10 +163,9 @@ void BraveVPNConnectionManagerMac::CreateAndConnectVPNConnection(bool connect) {
       return;
     }
 
-    vpn_manager.enabled = YES;
-    vpn_manager.protocolConfiguration = CreateProtocolConfig(info_);
-    vpn_manager.localizedDescription =
-        base::SysUTF8ToNSString(info_.connection_name);
+    [vpn_manager setEnabled:YES];
+    [vpn_manager setProtocolConfiguration:CreateProtocolConfig(info_)];
+    [vpn_manager setLocalizedDescription:base::SysUTF8ToNSString(info_.connection_name)];
 
     [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* error) {
       if (error) {
@@ -175,6 +174,8 @@ void BraveVPNConnectionManagerMac::CreateAndConnectVPNConnection(bool connect) {
         return;
       } else {
         VLOG(2) << "CreateAndConnectVPNConnection - saveToPrefs success";
+        for (Observer& obs : observers_)
+          obs.OnCreated(info_.connection_name);
 
         if (!connect)
           return;
@@ -190,6 +191,8 @@ void BraveVPNConnectionManagerMac::CreateAndConnectVPNConnection(bool connect) {
             return;
           }
           VLOG(2) << "Successfully connected";
+          for (Observer& obs : observers_)
+            obs.OnConnected(info_.connection_name);
         }];
       }
     }];
@@ -201,6 +204,7 @@ void BraveVPNConnectionManagerMac::UpdateVPNConnection(
 
 void BraveVPNConnectionManagerMac::RemoveVPNConnection(
     const BraveVPNConnectionInfo& info) {
+  info_ = info;
   NEVPNManager* vpn_manager = [NEVPNManager sharedManager];
   [vpn_manager loadFromPreferencesWithCompletionHandler:^(NSError* error) {
     if (error) {
@@ -218,6 +222,8 @@ void BraveVPNConnectionManagerMac::RemoveVPNConnection(
       }
       VLOG(2) << "RemoveVPNConnection - successfully removed";
       RemoveKeychanItemForAccount(kBraveVPNKey);
+      for (Observer& obs : observers_)
+        obs.OnRemoved(info_.connection_name);
     }];
   }];
 }
@@ -229,6 +235,7 @@ void BraveVPNConnectionManagerMac::Connect(const BraveVPNConnectionInfo& info) {
 
 void BraveVPNConnectionManagerMac::Disconnect(
     const BraveVPNConnectionInfo& info) {
+  info_ = info;
   NEVPNManager* vpn_manager = [NEVPNManager sharedManager];
   [vpn_manager loadFromPreferencesWithCompletionHandler:^(NSError* error) {
     if (error) {
@@ -244,13 +251,14 @@ void BraveVPNConnectionManagerMac::Disconnect(
     }
 
     [vpn_manager setEnabled:NO];
-    [vpn_manager setOnDemandEnabled:NO];
     [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* error) {
       if (error) {
         LOG(ERROR) << "Disconnect: saveToPrefs: "
                    << base::SysNSStringToUTF8([error localizedDescription]);
       }
       [[vpn_manager connection] stopVPNTunnel];
+      for (Observer& obs : observers_)
+        obs.OnDisconnected(info_.connection_name);
     }];
   }];
 }
