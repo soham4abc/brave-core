@@ -261,17 +261,17 @@ void SidebarAddItemBubbleDelegateView::OnConnect() {
   info.hostname = base::UTF16ToUTF8(host_->GetText());
   info.username = base::UTF16ToUTF8(username_->GetText());
   info.password = base::UTF16ToUTF8(password_->GetText());
-  manager->Connect(info);
+  manager->Connect(info.connection_name);
 }
 
 void SidebarAddItemBubbleDelegateView::OnDisconnect() {
   auto* manager = brave_vpn::BraveVPNConnectionManager::GetInstance();
   brave_vpn::BraveVPNConnectionInfo info;
-  manager->Disconnect(info);
+  manager->Disconnect(info.connection_name);
 }
 
 void SidebarAddItemBubbleDelegateView::OnRemove() {
   auto* manager = brave_vpn::BraveVPNConnectionManager::GetInstance();
   brave_vpn::BraveVPNConnectionInfo info;
-  manager->RemoveVPNConnection(info);
+  manager->RemoveVPNConnection(info.connection_name);
 }

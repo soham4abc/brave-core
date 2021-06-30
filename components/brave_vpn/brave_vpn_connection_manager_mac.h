@@ -30,12 +30,9 @@ class BraveVPNConnectionManagerMac : public BraveVPNConnectionManager {
   // BraveVPNConnectionManager overrides:
   void CreateVPNConnection(const BraveVPNConnectionInfo& info) override;
   void UpdateVPNConnection(const BraveVPNConnectionInfo& info) override;
-  void RemoveVPNConnection(const BraveVPNConnectionInfo& info) override;
-  void Connect(const BraveVPNConnectionInfo& info) override;
-  void Disconnect(const BraveVPNConnectionInfo& info) override;
-
-  // Connect if true. Otherwise, only create connection entry.
-  void CreateAndConnectVPNConnection(bool connect);
+  void RemoveVPNConnection(const std::string& name) override;
+  void Connect(const std::string& name) override;
+  void Disconnect(const std::string& name) override;
 
   BraveVPNConnectionInfo info_;
 };
