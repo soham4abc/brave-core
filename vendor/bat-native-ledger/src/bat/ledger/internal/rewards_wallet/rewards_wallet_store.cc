@@ -35,6 +35,7 @@ struct ReadJob : public BATLedgerJob<mojom::RewardsWalletPtr> {
         reader.ColumnString(1));
 
     if (payment_id.empty() || !seed || (*seed).empty()) {
+      // TODO: Wallet corruption - how should we recover?
       return Complete(nullptr);
     }
 
@@ -94,7 +95,6 @@ Future<bool> RewardsWalletStore::SaveNew(const std::string& payment_id,
 
   Future<bool>::Resolver resolver;
   if (!rewards_wallet_.payment_id.empty()) {
-    DCHECK(false);
     resolver.Complete(false);
     return resolver.future();
   }
@@ -103,7 +103,6 @@ Future<bool> RewardsWalletStore::SaveNew(const std::string& payment_id,
       context().Get<UserEncryption>().Base64EncryptString(recovery_seed);
 
   if (!encrypted_seed) {
-    DCHECK(false);
     resolver.Complete(false);
     return resolver.future();
   }
