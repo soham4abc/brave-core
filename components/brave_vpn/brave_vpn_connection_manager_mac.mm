@@ -155,7 +155,8 @@ void BraveVPNConnectionManagerMac::CreateVPNConnection(
 
     [vpn_manager setEnabled:YES];
     [vpn_manager setProtocolConfiguration:CreateProtocolConfig(info_)];
-    [vpn_manager setLocalizedDescription:base::SysUTF8ToNSString(info_.connection_name)];
+    [vpn_manager
+        setLocalizedDescription:base::SysUTF8ToNSString(info_.connection_name)];
 
     [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* error) {
       if (error) {
@@ -183,7 +184,8 @@ void BraveVPNConnectionManagerMac::RemoveVPNConnection(
       LOG(ERROR) << "RemoveVPNConnection - loadFromPrefs: "
                  << base::SysNSStringToUTF8([error localizedDescription]);
     } else {
-      [vpn_manager removeFromPreferencesWithCompletionHandler:^(NSError* error) {
+      [vpn_manager removeFromPreferencesWithCompletionHandler:^(
+                       NSError* error) {
         if (error) {
           LOG(ERROR) << "RemoveVPNConnection - removeFromPrefs: "
                      << base::SysNSStringToUTF8([error localizedDescription]);
@@ -200,8 +202,7 @@ void BraveVPNConnectionManagerMac::RemoveVPNConnection(
 
 void BraveVPNConnectionManagerMac::Connect(const std::string& name) {
   NEVPNManager* vpn_manager = [NEVPNManager sharedManager];
-  [vpn_manager loadFromPreferencesWithCompletionHandler:^(
-                   NSError* error) {
+  [vpn_manager loadFromPreferencesWithCompletionHandler:^(NSError* error) {
     if (error) {
       LOG(ERROR) << "Connect - loadFromPrefs error: "
                  << base::SysNSStringToUTF8([error localizedDescription]);
@@ -218,9 +219,8 @@ void BraveVPNConnectionManagerMac::Connect(const std::string& name) {
     NSError* start_error;
     [[vpn_manager connection] startVPNTunnelAndReturnError:&start_error];
     if (start_error != nil) {
-      LOG(ERROR)
-          << "Connect - startVPNTunnel error: "
-          << base::SysNSStringToUTF8([start_error localizedDescription]);
+      LOG(ERROR) << "Connect - startVPNTunnel error: "
+                 << base::SysNSStringToUTF8([start_error localizedDescription]);
       return;
     }
 
