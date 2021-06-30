@@ -46,7 +46,6 @@ class EthJsonRpcControllerUnitTest : public testing::Test {
 
   static std::unique_ptr<net::test_server::HttpResponse> ReturnResponse(
       const net::test_server::HttpRequest& request) {
-    DLOG(INFO) << request.content;
     auto response = std::make_unique<net::test_server::BasicHttpResponse>();
     response->set_code(net::HTTP_OK);
     response->set_content_type("text/plain");
