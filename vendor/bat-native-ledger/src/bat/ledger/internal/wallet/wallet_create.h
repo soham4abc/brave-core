@@ -27,10 +27,7 @@ class WalletCreate {
   void Start(ledger::ResultCallback callback);
 
  private:
-  void OnCreate(
-      const type::Result result,
-      const std::string& payment_id,
-      ledger::ResultCallback callback);
+  void OnCreate(mojom::BraveWalletPtr wallet, ledger::ResultCallback callback);
 
   LedgerImpl* ledger_;  // NOT OWNED
   std::unique_ptr<endpoint::PromotionServer> promotion_server_;

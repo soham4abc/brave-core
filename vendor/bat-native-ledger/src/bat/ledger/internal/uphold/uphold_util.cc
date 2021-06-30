@@ -113,8 +113,7 @@ std::string GetSecondStepVerify() {
 
 type::ExternalWalletPtr GetWallet(LedgerImpl* ledger) {
   DCHECK(ledger);
-  const std::string wallet_string =
-      ledger->ledger_client()->GetEncryptedStringState(state::kWalletUphold);
+  const std::string wallet_string = ledger->state()->GetUpholdWalletState();
 
   if (wallet_string.empty()) {
     return nullptr;
@@ -230,9 +229,7 @@ bool SetWallet(LedgerImpl* ledger, type::ExternalWalletPtr wallet) {
 
   std::string json;
   base::JSONWriter::Write(new_wallet, &json);
-  const bool success = ledger->ledger_client()->SetEncryptedStringState(
-      state::kWalletUphold,
-      json);
+  const bool success = ledger->state()->SetUpholdWalletState(json);
 
   BLOG_IF(0, !success, "Can't encrypt uphold wallet");
 

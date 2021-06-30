@@ -3292,46 +3292,6 @@ void RewardsServiceImpl::OnGetEventLogs(
   std::move(callback).Run(std::move(logs));
 }
 
-bool RewardsServiceImpl::SetEncryptedStringState(
-      const std::string& name,
-      const std::string& value) {
-  std::string encrypted_value;
-  if (!OSCrypt::EncryptString(value, &encrypted_value)) {
-    BLOG(0, "Couldn't encrypt value for " + name);
-    return false;
-  }
-
-  std::string encoded_value;
-  base::Base64Encode(encrypted_value, &encoded_value);
-
-  profile_->GetPrefs()->SetString(GetPrefPath(name), encoded_value);
-  return true;
-}
-
-std::string RewardsServiceImpl::GetEncryptedStringState(
-    const std::string& name) {
-  const std::string encoded_value =
-      profile_->GetPrefs()->GetString(GetPrefPath(name));
-
-  std::string encrypted_value;
-  if (!base::Base64Decode(encoded_value, &encrypted_value)) {
-    BLOG(0, "base64 decode failed for " + name);
-    return "";
-  }
-
-  if (encrypted_value.empty()) {
-    return "";
-  }
-
-  std::string value;
-  if (!OSCrypt::DecryptString(encrypted_value, &value)) {
-    BLOG(0, "Decrypting failed for " + name);
-    return "";
-  }
-
-  return value;
-}
-
 absl::optional<std::string> RewardsServiceImpl::EncryptString(
     const std::string& value) {
   std::string encrypted;

@@ -33,9 +33,8 @@ class LedgerImpl;
 namespace endpoint {
 namespace promotion {
 
-using PostWalletBraveCallback = std::function<void(
-    const type::Result result,
-    const std::string& payment_id)>;
+using PostWalletBraveCallback =
+    std::function<void(mojom::BraveWalletPtr wallet)>;
 
 class PostWalletBrave {
  public:
@@ -55,6 +54,7 @@ class PostWalletBrave {
 
   void OnRequest(
       const type::UrlResponse& response,
+      const std::vector<uint8_t>& recovery_seed,
       PostWalletBraveCallback callback);
 
   LedgerImpl* ledger_;  // NOT OWNED

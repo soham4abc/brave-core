@@ -48,6 +48,9 @@ struct ReadJob : public BATLedgerJob<mojom::RewardsWalletPtr> {
 
 struct WriteJob : public BATLedgerJob<bool> {
   void Start(const std::string& payment_id, const std::string& encrypted_seed) {
+    DCHECK(!payment_id.empty());
+    DCHECK(!encrypted_seed.empty());
+
     context()
         .Get<SQLStore>()
         .Execute(
@@ -87,8 +90,11 @@ Future<bool> RewardsWalletStore::Initialize() {
 
 Future<bool> RewardsWalletStore::SaveNew(const std::string& payment_id,
                                          const std::string& recovery_seed) {
+  DCHECK(!payment_id.empty());
+
   Future<bool>::Resolver resolver;
   if (!rewards_wallet_.payment_id.empty()) {
+    DCHECK(false);
     resolver.Complete(false);
     return resolver.future();
   }
@@ -97,6 +103,7 @@ Future<bool> RewardsWalletStore::SaveNew(const std::string& payment_id,
       context().Get<UserEncryption>().Base64EncryptString(recovery_seed);
 
   if (!encrypted_seed) {
+    DCHECK(false);
     resolver.Complete(false);
     return resolver.future();
   }

@@ -80,22 +80,18 @@ type::Result PostWalletBrave::ParseBody(
 
 void PostWalletBrave::Request(
     PostWalletBraveCallback callback) {
-  const auto wallet = ledger_->wallet()->GetWallet();
-  if (!wallet) {
-    BLOG(0, "Wallet is null");
-    callback(type::Result::LEDGER_ERROR, "");
-    return;
-  }
+  auto recovery_seed = util::Security::GenerateSeed();
 
   const auto headers = util::BuildSignHeaders(
       "post /v3/wallet/brave",
       "",
-      util::Security::GetPublicKeyHexFromSeed(wallet->recovery_seed),
-      wallet->recovery_seed);
+      util::Security::GetPublicKeyHexFromSeed(recovery_seed),
+      recovery_seed);
 
   auto url_callback = std::bind(&PostWalletBrave::OnRequest,
       this,
       _1,
+      recovery_seed,
       callback);
 
   auto request = type::UrlRequest::New();
@@ -107,19 +103,26 @@ void PostWalletBrave::Request(
 
 void PostWalletBrave::OnRequest(
     const type::UrlResponse& response,
+    const std::vector<uint8_t>& recovery_seed,
     PostWalletBraveCallback callback) {
   ledger::LogUrlResponse(__func__, response);
 
-  std::string payment_id;
-  type::Result result = CheckStatusCode(response.status_code);
-
-  if (result != type::Result::LEDGER_OK) {
-    callback(result, payment_id);
+  if (CheckStatusCode(response.status_code) != type::Result::LEDGER_OK) {
+    callback(nullptr);
     return;
   }
 
-  result = ParseBody(response.body, &payment_id);
-  callback(result, payment_id);
+  std::string payment_id;
+  if (ParseBody(response.body, &payment_id) != type::Result::LEDGER_OK) {
+    callback(nullptr);
+    return;
+  }
+
+  auto wallet = mojom::BraveWallet::New();
+  wallet->payment_id = payment_id;
+  wallet->recovery_seed = recovery_seed;
+
+  callback(std::move(wallet));
 }
 
 }  // namespace promotion

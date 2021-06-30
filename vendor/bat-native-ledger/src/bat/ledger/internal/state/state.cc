@@ -11,6 +11,7 @@
 #include "base/values.h"
 #include "bat/ledger/internal/common/time_util.h"
 #include "bat/ledger/internal/constants.h"
+#include "bat/ledger/internal/core/user_encryption.h"
 #include "bat/ledger/internal/ledger_impl.h"
 #include "bat/ledger/internal/state/state.h"
 #include "bat/ledger/internal/state/state_keys.h"
@@ -380,6 +381,44 @@ void State::SetAnonTransferChecked(const bool checked) {
 
 bool State::GetAnonTransferChecked() {
   return ledger_->ledger_client()->GetBooleanState(kAnonTransferChecked);
+}
+
+std::string State::GetBitflyerWalletState() {
+  std::string json = ledger_->ledger_client()->GetStringState(kWalletBitflyer);
+  auto result =
+      ledger_->context().Get<UserEncryption>().Base64DecryptString(json);
+
+  return result ? *result : "";
+}
+
+bool State::SetBitflyerWalletState(const std::string& json) {
+  auto result =
+      ledger_->context().Get<UserEncryption>().Base64EncryptString(json);
+
+  if (!result)
+    return false;
+
+  ledger_->ledger_client()->SetStringState(kWalletBitflyer, *result);
+  return true;
+}
+
+std::string State::GetUpholdWalletState() {
+  std::string json = ledger_->ledger_client()->GetStringState(kWalletUphold);
+  auto result =
+      ledger_->context().Get<UserEncryption>().Base64DecryptString(json);
+
+  return result ? *result : "";
+}
+
+bool State::SetUpholdWalletState(const std::string& json) {
+  auto result =
+      ledger_->context().Get<UserEncryption>().Base64EncryptString(json);
+
+  if (!result)
+    return false;
+
+  ledger_->ledger_client()->SetStringState(kWalletUphold, *result);
+  return true;
 }
 
 }  // namespace state

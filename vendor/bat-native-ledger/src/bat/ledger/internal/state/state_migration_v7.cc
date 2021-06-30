@@ -6,6 +6,7 @@
 
 #include <string>
 
+#include "bat/ledger/internal/core/user_encryption.h"
 #include "bat/ledger/internal/ledger_impl.h"
 #include "bat/ledger/internal/state/state_keys.h"
 
@@ -21,20 +22,21 @@ StateMigrationV7::~StateMigrationV7() = default;
 void StateMigrationV7::Migrate(ledger::ResultCallback callback) {
   const std::string brave =
       ledger_->ledger_client()->GetStringState(kWalletBrave);
-  bool success =
-      ledger_->ledger_client()->SetEncryptedStringState(kWalletBrave, brave);
 
-  if (!success) {
+  auto encrypted =
+      ledger_->context().Get<UserEncryption>().Base64EncryptString(brave);
+
+  if (!encrypted) {
     callback(type::Result::LEDGER_ERROR);
     return;
   }
 
+  ledger_->ledger_client()->SetStringState(kWalletBrave, *encrypted);
+
   const std::string uphold =
       ledger_->ledger_client()->GetStringState(kWalletUphold);
-  success =
-      ledger_->ledger_client()->SetEncryptedStringState(kWalletUphold, uphold);
 
-  if (!success) {
+  if (!ledger_->state()->SetUpholdWalletState(uphold)) {
     callback(type::Result::LEDGER_ERROR);
     return;
   }

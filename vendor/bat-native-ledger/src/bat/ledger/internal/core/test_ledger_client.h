@@ -144,11 +144,6 @@ class TestLedgerClient : public LedgerClient {
 
   void DeleteLog(client::ResultCallback callback) override;
 
-  bool SetEncryptedStringState(const std::string& name,
-                               const std::string& value) override;
-
-  std::string GetEncryptedStringState(const std::string& name) override;
-
   absl::optional<std::string> EncryptString(const std::string& value) override;
 
   absl::optional<std::string> DecryptString(const std::string& value) override;

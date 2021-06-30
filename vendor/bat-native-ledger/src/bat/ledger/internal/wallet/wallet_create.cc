@@ -30,44 +30,28 @@ WalletCreate::~WalletCreate() = default;
 
 void WalletCreate::Start(ledger::ResultCallback callback) {
   auto wallet = ledger_->wallet()->GetWallet();
-
   if (wallet && !wallet->payment_id.empty()) {
     BLOG(1, "Wallet already exists");
     callback(type::Result::WALLET_CREATED);
     return;
   }
 
-  wallet = type::BraveWallet::New();
-  const auto key_info_seed = util::Security::GenerateSeed();
-  wallet->recovery_seed = key_info_seed;
-  const bool success = ledger_->wallet()->SetWallet(std::move(wallet));
-
-  if (!success) {
-    BLOG(0, "Wallet couldn't be set");
-    callback(type::Result::LEDGER_ERROR);
-    return;
-  }
-
   auto url_callback = std::bind(&WalletCreate::OnCreate,
       this,
       _1,
-      _2,
       callback);
 
   promotion_server_->post_wallet_brave()->Request(url_callback);
 }
 
 void WalletCreate::OnCreate(
-    const type::Result result,
-    const std::string& payment_id,
+    mojom::BraveWalletPtr wallet,
     ledger::ResultCallback callback) {
-  if (result != type::Result::LEDGER_OK) {
-    callback(result);
+  if (!wallet) {
+    callback(type::Result::LEDGER_ERROR);
     return;
   }
 
-  auto wallet = ledger_->wallet()->GetWallet();
-  wallet->payment_id = payment_id;
   const bool success = ledger_->wallet()->SetWallet(std::move(wallet));
 
   if (!success) {

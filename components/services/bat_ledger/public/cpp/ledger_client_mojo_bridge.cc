@@ -376,19 +376,6 @@ void LedgerClientMojoBridge::DeleteLog(DeleteLogCallback callback) {
                 _1));
 }
 
-void LedgerClientMojoBridge::SetEncryptedStringState(
-    const std::string& name,
-    const std::string& value,
-    SetEncryptedStringStateCallback callback) {
-  std::move(callback).Run(ledger_client_->SetEncryptedStringState(name, value));
-}
-
-void LedgerClientMojoBridge::GetEncryptedStringState(
-    const std::string& name,
-    GetEncryptedStringStateCallback callback) {
-  std::move(callback).Run(ledger_client_->GetEncryptedStringState(name));
-}
-
 void LedgerClientMojoBridge::EncryptString(const std::string& value,
                                            EncryptStringCallback callback) {
   std::move(callback).Run(ledger_client_->EncryptString(value));

@@ -469,6 +469,7 @@ void RewardsBrowserTestContribution::SetUpUpholdWallet(
 
   std::string json;
   base::JSONWriter::Write(wallet, &json);
+  // TODO(zenparsing): This needs to be OSCrypt'd.
   rewards_service->SetEncryptedStringState("wallets.uphold", json);
 }
 

@@ -154,13 +154,6 @@ class LEDGER_EXPORT LedgerClient {
 
   virtual void DeleteLog(client::ResultCallback callback) = 0;
 
-  // TODO(zenparsing): Remove these methods
-  virtual bool SetEncryptedStringState(
-      const std::string& name,
-      const std::string& value) = 0;
-
-  virtual std::string GetEncryptedStringState(const std::string& name) = 0;
-
   virtual absl::optional<std::string> EncryptString(
       const std::string& value) = 0;
 

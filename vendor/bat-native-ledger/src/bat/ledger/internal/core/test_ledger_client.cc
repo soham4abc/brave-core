@@ -272,17 +272,6 @@ void TestLedgerClient::DeleteLog(client::ResultCallback callback) {
   callback(mojom::Result::LEDGER_OK);
 }
 
-bool TestLedgerClient::SetEncryptedStringState(const std::string& name,
-                                               const std::string& value) {
-  encrypted_state_store_.SetStringPath(name, value);
-  return true;
-}
-
-std::string TestLedgerClient::GetEncryptedStringState(const std::string& name) {
-  const std::string* opt = encrypted_state_store_.FindStringPath(name);
-  return opt ? *opt : "";
-}
-
 absl::optional<std::string> TestLedgerClient::EncryptString(
     const std::string& value) {
   return "shhhh:" + value;
