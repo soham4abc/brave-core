@@ -76,8 +76,8 @@ OSStatus StorePassword(const NSString* password, const NSString* account_key) {
   if (status != errSecSuccess) {
     if (status == errSecDuplicateItem) {
       VLOG(2) << "There is duplicated key in keychain. removing and re-adding.";
-      RemoveKeychanItemForAccount(account_key);
-      return StorePassword(password, account_key);
+      if (RemoveKeychanItemForAccount(account_key) == errSecSuccess)
+        return StorePassword(password, account_key);
     }
     LOG(ERROR) << "Error: storing password";
   }
@@ -191,7 +191,6 @@ void BraveVPNConnectionManagerMac::RemoveVPNConnection(
                      << base::SysNSStringToUTF8([error localizedDescription]);
         }
         VLOG(2) << "RemoveVPNConnection - successfully removed";
-        RemoveKeychanItemForAccount(kBraveVPNKey);
         for (Observer& obs : observers_)
           obs.OnRemoved(std::string());
       }];
