@@ -65,10 +65,4 @@ executable("vpntool") {
   if (is_win) {
     sources += [ "winvpntool.cc" ]
   }
-
-  if (is_mac) {
-    sources += [ "macvpntool.mm" ]
-
-    frameworks = [ "Foundation.framework" ]
-  }
 }
