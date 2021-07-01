@@ -7,7 +7,6 @@
 #define BRAVE_VENDOR_BAT_NATIVE_LEDGER_SRC_BAT_LEDGER_INTERNAL_REWARDS_WALLET_CREATE_WALLET_ENDPOINT_H_
 
 #include "bat/ledger/internal/core/bat_ledger_context.h"
-#include "bat/ledger/internal/core/callback_scope.h"
 #include "bat/ledger/internal/core/future.h"
 #include "bat/ledger/internal/core/optional.h"
 #include "bat/ledger/internal/rewards_wallet/rewards_wallet.h"

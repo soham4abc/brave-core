@@ -13,12 +13,12 @@ namespace ledger {
 const size_t UserEncryption::kComponentKey =
     BATLedgerContext::ReserveComponentKey();
 
-absl::optional<std::string> UserEncryption::EncryptString(
+optional<std::string> UserEncryption::EncryptString(
     const std::string& plain_text) {
   return context().GetLedgerClient()->EncryptString(plain_text);
 }
 
-absl::optional<std::string> UserEncryption::Base64EncryptString(
+optional<std::string> UserEncryption::Base64EncryptString(
     const std::string& plain_text) {
   auto result = EncryptString(plain_text);
   if (!result)
@@ -29,12 +29,12 @@ absl::optional<std::string> UserEncryption::Base64EncryptString(
   return encoded;
 }
 
-absl::optional<std::string> UserEncryption::DecryptString(
+optional<std::string> UserEncryption::DecryptString(
     const std::string& encrypted) {
   return context().GetLedgerClient()->DecryptString(encrypted);
 }
 
-absl::optional<std::string> UserEncryption::Base64DecryptString(
+optional<std::string> UserEncryption::Base64DecryptString(
     const std::string& encrypted) {
   std::string decoded;
   if (!base::Base64Decode(encrypted, &decoded))

@@ -9,7 +9,7 @@
 #include <string>
 
 #include "bat/ledger/internal/core/bat_ledger_context.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "bat/ledger/internal/core/optional.h"
 
 namespace ledger {
 
@@ -17,13 +17,11 @@ class UserEncryption : public BATLedgerContext::Object {
  public:
   static const size_t kComponentKey;
 
-  absl::optional<std::string> EncryptString(const std::string& plain_text);
-  absl::optional<std::string> DecryptString(const std::string& encrypted);
+  optional<std::string> EncryptString(const std::string& plain_text);
+  optional<std::string> DecryptString(const std::string& encrypted);
 
-  absl::optional<std::string> Base64EncryptString(
-      const std::string& plain_text);
-
-  absl::optional<std::string> Base64DecryptString(const std::string& encrypted);
+  optional<std::string> Base64EncryptString(const std::string& plain_text);
+  optional<std::string> Base64DecryptString(const std::string& encrypted);
 };
 
 }  // namespace ledger

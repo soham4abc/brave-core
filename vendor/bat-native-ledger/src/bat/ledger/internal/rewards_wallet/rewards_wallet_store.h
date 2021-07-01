@@ -20,6 +20,9 @@ class RewardsWalletStore : public BATLedgerContext::Object {
  public:
   static const size_t kComponentKey;
 
+  RewardsWalletStore();
+  ~RewardsWalletStore() override;
+
   optional<RewardsWallet>& rewards_wallet() { return rewards_wallet_; }
 
   Future<bool> Initialize();

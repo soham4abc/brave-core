@@ -6,6 +6,7 @@
 #ifndef BRAVE_VENDOR_BAT_NATIVE_LEDGER_SRC_BAT_LEDGER_INTERNAL_REWARDS_WALLET_REWARDS_WALLET_H_
 #define BRAVE_VENDOR_BAT_NATIVE_LEDGER_SRC_BAT_LEDGER_INTERNAL_REWARDS_WALLET_REWARDS_WALLET_H_
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -16,15 +17,24 @@ class RewardsWallet {
   RewardsWallet(const std::string& payment_id,
                 const std::vector<uint8_t>& recovery_seed);
 
+  RewardsWallet(const std::string& payment_id,
+                const std::string& recovery_seed);
+
+  RewardsWallet(const RewardsWallet& other);
+
   ~RewardsWallet();
 
   const std::string& payment_id() const { return payment_id_; }
 
-  const std::string& recovery_seed() const { return recovery_seed_; }
+  const std::vector<uint8_t>& recovery_seed() const { return recovery_seed_; }
 
   static RewardsWallet CreateWithEmptyPaymentId();
 
   struct KeyPair {
+    KeyPair();
+    KeyPair(const KeyPair& other);
+    ~KeyPair();
+
     std::vector<uint8_t> public_key;
     std::vector<uint8_t> secret_key;
   };
@@ -41,23 +51,9 @@ class RewardsWallet {
       const std::string& request_id);
 
   std::vector<std::string> GetRequestSigningHeaders(
-    const std::string& method,
-    const std::string& path,
-    const std::string& body)
-
-  struct RequestSignature {
-    std::string digest,
-    std::string signature
-  };
-
-  RequestSignature SignRequest(const std::string& method,
-                               const std::string& path,
-                               const std::string& body);
-
-  RequestSignature SignRequestWithId(const std::string& method,
-                                     const std::string& path,
-                                     const std::string& body,
-                                     const std::string& request_id);
+      const std::string& method,
+      const std::string& path,
+      const std::string& body);
 
  private:
   RewardsWallet();

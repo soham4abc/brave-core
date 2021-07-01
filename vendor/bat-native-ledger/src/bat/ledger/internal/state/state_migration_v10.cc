@@ -21,7 +21,7 @@ namespace state {
 
 namespace {
 
-mojom::RewardsWalletPtr ParseWalletJSON(const std::string& data) {
+optional<RewardsWallet> ParseWalletJSON(const std::string& data) {
   auto root = base::JSONReader::Read(data);
   if (!root || !root->is_dict())
     return {};
@@ -38,10 +38,7 @@ mojom::RewardsWalletPtr ParseWalletJSON(const std::string& data) {
   if (!base::Base64Decode(*seed, &decoded_seed))
     return {};
 
-  auto wallet = mojom::RewardsWallet::New();
-  wallet->payment_id = *payment_id;
-  wallet->recovery_seed = std::move(decoded_seed);
-  return wallet;
+  return RewardsWallet(*payment_id, decoded_seed);
 }
 
 }  // namespace
@@ -68,8 +65,8 @@ void StateMigrationV10::Migrate(ledger::ResultCallback callback) {
     return;
   }
 
-  auto result = ParseWalletJSON(*json);
-  if (!result) {
+  auto wallet = ParseWalletJSON(*json);
+  if (!wallet) {
     BLOG(0, "Rewards wallet could not be parsed from user preferences");
     callback(type::Result::LEDGER_OK);
     return;
@@ -82,7 +79,7 @@ void StateMigrationV10::Migrate(ledger::ResultCallback callback) {
 
   ledger_->context()
       .Get<RewardsWalletStore>()
-      .SaveNew(result->payment_id, result->recovery_seed)
+      .SaveNew(*wallet)
       .Then(base::BindOnce(on_saved, callback));
 }
 

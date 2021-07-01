@@ -16,8 +16,17 @@ namespace ledger {
 namespace {
 
 struct ReadResult {
-  bool corrupted = false;
+  ReadResult() {}
+  explicit ReadResult(RewardsWallet wallet) : wallet(std::move(wallet)) {}
+
+  static ReadResult Corrupted() {
+    ReadResult result;
+    result.corrupted = true;
+    return result;
+  }
+
   optional<RewardsWallet> wallet;
+  bool corrupted = false;
 };
 
 struct ReadJob : public BATLedgerJob<ReadResult> {
@@ -31,7 +40,7 @@ struct ReadJob : public BATLedgerJob<ReadResult> {
   void OnReadComplete(mojom::DBCommandResponsePtr response) {
     SQLReader reader(response);
     if (!reader.Step())
-      return Complete({corrupted = false, wallet = {}});
+      return Complete(ReadResult());
 
     std::string payment_id = reader.ColumnString(0);
 
@@ -39,13 +48,9 @@ struct ReadJob : public BATLedgerJob<ReadResult> {
         reader.ColumnString(1));
 
     if (payment_id.empty() || !seed || (*seed).empty())
-      return Complete({corrupted = true, wallet = {}})
+      return Complete(ReadResult::Corrupted());
 
-    auto wallet = mojom::RewardsWallet::New();
-    wallet->payment_id = std::move(payment_id);
-    wallet->recovery_seed = std::move(*seed);
-
-    Complete({corrupted = false, wallet = RewardsWallet(payment_id, *seed)});
+    Complete(ReadResult(RewardsWallet(payment_id, *seed)));
   }
 };
 
@@ -72,6 +77,10 @@ struct WriteJob : public BATLedgerJob<bool> {
 
 }  // namespace
 
+RewardsWalletStore::RewardsWalletStore() = default;
+
+RewardsWalletStore::~RewardsWalletStore() = default;
+
 const size_t RewardsWalletStore::kComponentKey =
     BATLedgerContext::ReserveComponentKey();
 
@@ -96,8 +105,11 @@ Future<bool> RewardsWalletStore::SaveNew(const RewardsWallet& wallet) {
   if (rewards_wallet_)
     return Future<bool>::Completed(false);
 
+  std::string seed_string(wallet.recovery_seed().begin(),
+                          wallet.recovery_seed().end());
+
   auto encrypted_seed = context().Get<UserEncryption>().Base64EncryptString(
-      wallet.recovery_seed());
+      seed_string);
 
   if (!encrypted_seed)
     return Future<bool>::Completed(false);
