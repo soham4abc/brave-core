@@ -611,7 +611,7 @@
 <translation id="1653526288038954982">{NUM_PRINTER,plural, =1{Add the printer to Google Cloud Print so that you can print from anywhere.}other{Add # printers to Google Cloud Print so that you can print from anywhere.}}</translation>
 <translation id="1653631694606464309">Web apps typically ask to open certain types of files so that you can work on those files where you want, like opening documents in your preferred word processor</translation>
 <translation id="1656528038316521561">Background opacity</translation>
-<translation id="4711067597921221305">Help make <ph name="PRODUCT_NAME"/> better by automatically sending usage statistics and crash reports to Brave.</translation>
+<translation id="4711067597921221305">Help make <ph name="PRODUCT_NAME"/> better by automatically sending and crash reports to Brave.</translation>
 <translation id="1657937299377480641">To sign in again for access to educational resources, ask a parent to give you permission</translation>
 <translation id="1658424621194652532">This page is accessing your microphone.</translation>
 <translation id="1660204651932907780">Allow sites to play sound (recommended)</translation>
@@ -6207,7 +6207,7 @@ and Ctrl+Alt+Brightness down to zoom out.</translation>
 <translation id="7991296728590311172">Switch Access settings</translation>
 <translation id="7997826902155442747">Process Priority</translation>
 <translation id="7999229196265990314">Created the following files:
-        
+
 Extension: <ph name="EXTENSION_FILE"/>
 Key File: <ph name="KEY_FILE"/>
 
