@@ -64,10 +64,6 @@ OSStatus StorePassword(const NSString* password, const NSString* account_key) {
   NSDictionary* sec_item = @{
     (__bridge id)kSecClass : (__bridge id)kSecClassGenericPassword,
     (__bridge id)kSecAttrService : bundle_id,
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    (__bridge id)kSecAttrAccessible : (__bridge id)kSecAttrAccessibleAlways,
-#pragma clang diagnostic pop
     (__bridge id)kSecAttrSynchronizable : (__bridge id)kCFBooleanFalse,
     (__bridge id)kSecAttrAccount : account_key,
     (__bridge id)kSecValueData : password_data,
